@@ -27,6 +27,22 @@ module.exports = NodeHelper.create({
     };
   },
 
+  async getUnsplashImage(query) {
+    const res = await fetch(
+      `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=1&orientation=landscape`,
+      {
+        headers: {
+          Authorization: `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}`
+        }
+      }
+    );
+    const data = await res.json();
+    if (data.results && data.results.length > 0) {
+      return data.results[0].urls.regular;
+    }
+    return null;
+  },
+
   async generateAd() {
     const formats = [
       { type: "Infomercial", hook: "Are you tired of...", voice: "desperate, breathless, assumes the listener is suffering" },
@@ -71,15 +87,19 @@ Content hook: ${format.hook}
 
 First, invent a fake brand name that combines or references both subjects. It should sound like a real brand — not a joke name, not a pun. Deadpan is funnier than obvious.
 
-Then write the ad copy in the format and tone specified. Rules:
+Then write the ad in three parts:
+1. headline — one punchy sentence in the tone of the format
+2. adCopy — 2-3 sentences of body copy that follow the headline
+3. imageQuery — a 2-3 word Unsplash search term that would find a visually striking photo related to the subjects or brand. Should return real photos, not abstractions.
+
+Rules:
 - Never acknowledge the subjects are unrelated
 - Write with complete sincerity — no winking at the audience
 - The brand name should appear naturally in the copy
-- Length: 3-5 sentences maximum
 - Do not use the words: revolutionary, game-changing, innovative, unlock, leverage, seamlessly
 
 Return ONLY valid JSON, no markdown, no backticks:
-{"brandName": "...", "adCopy": "..."}`;
+{"brandName": "...", "headline": "...", "adCopy": "...", "imageQuery": "..."}`;
 
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -98,10 +118,14 @@ Return ONLY valid JSON, no markdown, no backticks:
     const data = await res.json();
     const text = data.content[0].text.trim();
     const parsed = JSON.parse(text);
+    const imageUrl = await this.getUnsplashImage(parsed.imageQuery);
 
     return {
       brandName: parsed.brandName,
+      headline: parsed.headline,
       adCopy: parsed.adCopy,
+      imageQuery: parsed.imageQuery,
+      imageUrl: imageUrl,
       format: format.type,
       subjectA: a.title,
       subjectB: b.title

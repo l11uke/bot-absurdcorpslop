@@ -1,6 +1,6 @@
 Module.register("MMM-AntiAd", {
   defaults: {
-    updateInterval: 12 * 60 * 60 * 1000, // 12 hours
+    updateInterval: 12 * 60 * 60 * 1000,
     animationSpeed: 1000
   },
 
@@ -51,9 +51,15 @@ Module.register("MMM-AntiAd", {
 
     if (!this.ad) return wrapper;
 
+    const img = this.ad.imageUrl
+      ? `<div class="antiad-image"><img src="${this.ad.imageUrl}" alt="${this.ad.imageQuery}" /></div>`
+      : "";
+
     wrapper.innerHTML = `
       <div class="antiad-format">${this.ad.format}</div>
       <div class="antiad-brand">${this.ad.brandName}</div>
+      <div class="antiad-headline">${this.ad.headline}</div>
+      ${img}
       <div class="antiad-copy">${this.ad.adCopy}</div>
       <div class="antiad-subjects">${this.ad.subjectA} + ${this.ad.subjectB}</div>
     `;
