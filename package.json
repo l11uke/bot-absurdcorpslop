@@ -1,0 +1,12 @@
+{
+  "name": "MMM-AntiAd",
+  "version": "1.0.0",
+  "description": "A MagicMirror² module that generates absurdist advertisements from random Wikipedia article combinations using Claude AI.",
+  "main": "MMM-AntiAd.js",
+  "scripts": {},
+  "dependencies": {
+    "node-fetch": "^2.6.9"
+  },
+  "author": "l11uke",
+  "license": "MIT"
+}
