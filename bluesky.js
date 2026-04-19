@@ -72,17 +72,22 @@ export async function postAd(ad) {
   // const imageUrl = await fetchUnsplashImage(ad.imageQuery);
   // const blobRef = imageUrl ? await uploadImageToBluesky(imageUrl, session.accessJwt) : null;
 
+  const truncate = (str, max) => str.length > max ? str.slice(0, max - 1) + "…" : str;
+  const subjectA = truncate(ad.subjectA, 40);
+  const subjectB = truncate(ad.subjectB, 40);
+  const credits = `📡 ${subjectA} + ${subjectB}`;
+
   const post1Text = [
     `[${ad.format.toUpperCase()}]`,
     ad.brandName,
     ad.headline,
+    credits,
   ].join("\n");
 
   const post1 = await createPost(session, post1Text);
   const post1Ref = buildPostRef(post1);
 
-  const credits = `📡 ${ad.subjectA} + ${ad.subjectB}`;
-  const post2Text = `${ad.adCopy}\n\n${credits}`;
+  const post2Text = ad.adCopy;
 
   const replyRef = {
     root: post1Ref,
