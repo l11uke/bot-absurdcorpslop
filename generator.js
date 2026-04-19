@@ -1,3 +1,4 @@
+import "dotenv/config";
 import fetch from "node-fetch";
 
 const FORMATS = [
@@ -85,7 +86,8 @@ Return ONLY valid JSON, no markdown, no backticks:
   if (!res.ok) throw new Error(`Anthropic API error: ${res.status}`);
   const data = await res.json();
   const text = data.content[0].text.trim();
-  const parsed = JSON.parse(text);
+  const clean = text.replace(/^```json\s*|^```\s*|```$/gm, "").trim();
+const parsed = JSON.parse(clean);
 
   return {
     brandName: parsed.brandName,
