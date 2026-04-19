@@ -1,105 +1,89 @@
-# MMM-AntiAd
+# bot-absurdcorpslop
 
-A [MagicMirror²](https://magicmirror.builders/) module that generates absurdist advertisements from random Wikipedia article combinations using Claude AI.
+Bluesky bot that generates absurdist advertisements from random Wikipedia article combinations using Claude AI.
 
-## What It Does
-
-Every 12 hours, the module:
+Every 24 hours, it:
 1. Pulls two random Wikipedia articles
-2. Selects a random ad format from 25 types
-3. Generates a fake brand name, headline, and body copy using Claude AI — written with complete sincerity in the tone of the selected format
-4. Finds a relevant image from Unsplash
-5. Displays the result on your mirror
+2. Picks a random ad format from 25 types
+3. Generates a brand name, headline, and body copy via Claude — written with complete sincerity
+4. Posts as a two-post thread on Bluesky
 
 The humor comes from corporate earnestness applied to completely wrong subjects.
 
 ---
 
-## Examples
+## Thread structure
 
-**Format:** LinkedIn thought leadership
-**Brand:** Trent & Bombardier Advisory Group
-*Don't let your defensive mechanisms calcify before the doctrine does.*
+Post 1 — format label, brand name, headline:
 
-> Most people are watching three synods collapse because leadership refused to iterate. At Trent & Bombardier, we've spent fourteen years helping organisations secrete precisely the right chemical response at precisely the right moment. The church didn't reform itself by being comfortable. Neither will you.
+    [LINKEDIN THOUGHT LEADERSHIP]
+    Trent & Bombardier Advisory Group
+    Don't let your defensive mechanisms calcify before the doctrine does.
 
----
+Post 2 (reply) — body copy and Wikipedia credits:
 
-**Format:** Wellness brand
-**Brand:** SurveyNourish
-*Your body deserves a precise understanding of its own terrain.*
+    Most people are watching three synods collapse because leadership refused
+    to iterate. At Trent & Bombardier, we've spent fourteen years helping
+    organisations secrete precisely the right chemical response at precisely
+    the right moment.
 
-> Most people are consuming at scale without ever mapping the consequences — SurveyNourish exists because your digestive grid has boundaries, and someone needs to draw them. Our 12-week programme triangulates your intake with the same rigour the British countryside deserves.
-
----
-
-**Format:** Classified ad
-**Brand:** MeroGlide
-*FOR SALE: One careful owner.*
-
-> MeroGlide slip-ons, barely worn, direct lineage to the founding footwear of the Frankish royal court — or near enough. These aren't shoes, they're succession. Serious inquiries only, no time wasters, collection preferred, will not post.
+    📡 Council of Trent + Bombardier beetle
 
 ---
 
-## Requirements
+## Setup
 
-- MagicMirror² installed and running
-- Node.js 14+
-- An [Anthropic API key](https://console.anthropic.com/)
-- An [Unsplash API key](https://unsplash.com/developers)
+Clone and install:
 
----
+    git clone https://github.com/l11uke/bot-absurdcorpslop
+    cd bot-absurdcorpslop
+    npm install
+    cp .env.example .env
 
-## Installation
+Edit .env with your keys, then:
 
-```bash
-cd ~/MagicMirror/modules
-git clone https://github.com/l11uke/MMM-AntiAd.git
-cd MMM-AntiAd
-npm install
-```
+    npm start
 
-Set your API keys as environment variables:
+### Bluesky App Password
 
-```bash
-export ANTHROPIC_API_KEY=your_anthropic_key_here
-export UNSPLASH_ACCESS_KEY=your_unsplash_key_here
-```
+Do not use your main account password. Generate one at:
+https://bsky.app/settings/app-passwords
 
-To make them permanent, add those lines to your `~/.bashrc` or `~/.profile`.
+### Environment variables
 
----
-
-## Configuration
-
-Add to your `config/config.js`:
-
-```javascript
-{
-  module: "MMM-AntiAd",
-  position: "bottom_left",
-  config: {
-    updateInterval: 12 * 60 * 60 * 1000  // 12 hours in milliseconds
-  }
-}
-```
+| Variable              | Required | Description                                      |
+|-----------------------|----------|--------------------------------------------------|
+| ANTHROPIC_API_KEY     | Yes      | Claude API key                                   |
+| BSKY_HANDLE           | Yes      | Your Bluesky handle (e.g. yourbot.bsky.social)   |
+| BSKY_APP_PASSWORD     | Yes      | Bluesky App Password                             |
+| POST_INTERVAL_HOURS   | No       | Posting frequency in hours (default: 24)         |
 
 ---
 
-## Ad Formats
+## One-off post
 
-The module randomly selects from 25 formats including:
+To post once without starting the scheduler:
 
-Infomercial, Luxury brand, Tech startup, Government PSA, Late night TV, Wellness brand, Financial product, Political campaign, Legal disclaimer, Academic abstract, Dating profile, Real estate listing, Job posting, Warning label, Obituary as ad, TripAdvisor review, LinkedIn thought leadership, Kickstarter pitch, Supermarket bundle, Insurance claim, Classified ad, Church bulletin, Pyramid scheme, Caution label, Unhinged Yelp review.
+    npm run post-once
 
 ---
 
 ## Cost
 
 - Claude Haiku — approximately $0.0002 per generation
-- Unsplash — free tier allows 50 requests per hour
+- At once daily: approximately $0.06/month
 
-At 12-hour intervals that's roughly $0.12/month in API costs.
+---
+
+## Ad formats
+
+25 formats including: Infomercial, Luxury brand, Tech startup, Government PSA, Late night TV, Wellness brand, Financial product, Political campaign, Legal disclaimer, Academic abstract, Dating profile, Real estate listing, Job posting, Warning label, Obituary as ad, TripAdvisor review, LinkedIn thought leadership, Kickstarter pitch, Supermarket bundle, Insurance claim, Classified ad, Church bulletin, Pyramid scheme, Caution label, Unhinged Yelp review.
+
+---
+
+## Roadmap
+
+- [ ] Image embedding (Unsplash fetch -> Bluesky blob upload) — skeleton in images.js
 
 ---
 
