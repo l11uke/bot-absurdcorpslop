@@ -1,11 +1,19 @@
 {
-  "name": "MMM-AntiAd",
+  "name": "bot-absurdcorpslop",
   "version": "1.0.0",
-  "description": "A MagicMirror² module that generates absurdist advertisements from random Wikipedia article combinations using Claude AI.",
-  "main": "MMM-AntiAd.js",
-  "scripts": {},
+  "description": "Bluesky bot that generates absurdist advertisements from random Wikipedia article combinations using Claude AI.",
+  "type": "module",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js",
+    "post-once": "node -e \"import('./generator.js').then(m=>m.generateAd()).then(ad=>import('./bluesky.js').then(b=>b.postAd(ad)))\""
+  },
   "dependencies": {
-    "node-fetch": "^2.6.9"
+    "dotenv": "^16.4.5",
+    "node-fetch": "^3.3.2"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "author": "l11uke",
   "license": "MIT"
