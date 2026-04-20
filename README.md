@@ -132,7 +132,13 @@ Formats removed during development for defamation or misinformation risk: Politi
 - At once daily: approximately $0.06/month
 
 ---
+## Roadmap
 
+- [ ] Engagement-based retention — check like/repost counts before deleting, extend life of posts above a threshold
+- [ ] Mention triggers — let users tag the bot with a format name to request a specific ad type
+- [ ] Per-format character tuning — some formats consistently run long, worth tailoring limits per type
+
+---
 ## License
 
 MIT
