@@ -9,19 +9,14 @@ const FORMATS = [
   { type: "Late Night TV", hook: "But wait, there's more", voice: "begging you not to switch off" },
   { type: "Wellness", hook: "Your body deserves...", voice: "inventing medical issues you don't have, to seed dependence" },
   { type: "Financial", hook: "Don't leave money on the table", voice: "get in early and you'll make money, don't miss out, hint at scarcity" },
-    { type: "Legal", hook: "A common side effect from X is suffering from the negative impacts associated with Y", voice: "your mileage may vary, we are not responsible" },
-  { type: "Academic", hook: "X is proven to increase the impact of Y on the environment", voice: "assertive, debate team nerd" },
-    { type: "Real Estate", hook: "The value of properties is sky rocketing if you have your own X", voice: "tacky and obvious, mutton dressed up as lamb" },
+      { type: "Real Estate", hook: "The value of properties is sky rocketing if you have your own X", voice: "tacky and obvious, mutton dressed up as lamb" },
   { type: "Job Posting", hook: "Are you an experienced X maintenance professional, looking for work in the Y industry?", voice: "genuine but oblivious" },
-  { type: "Warning", hook: "TOXIC - when taken X can be harmful to your Y", voice: "worst case scenario" },
-    { type: "LinkedIn", hook: "Don't count your X before they Y - trust me, i turned a startup into a 500m ARR business", voice: "delusional confidence, humble-brag disguised as wisdom" },
+      { type: "LinkedIn", hook: "Don't count your X before they Y - trust me, i turned a startup into a 500m ARR business", voice: "delusional confidence, humble-brag disguised as wisdom" },
   { type: "Kickstarter", hook: "When you have all your X and they are out of control, you need a Y", voice: "nervous, but sure of themselves, self made bootstrap approach" },
   { type: "Supermarket", hook: "Buy now and get an extra X when you buy Y", voice: "shouty, trying to confuse the fact these are commodity items on a race to the bottom" },
-  { type: "Insurance", hook: "Following a recent incident...", voice: "factual but clearly telling one side of the story" },
-  { type: "Classified", hook: "FOR SALE: One careful owner...", voice: "sleazy and untrustworthy, too good to be true" },
+    { type: "Classified", hook: "FOR SALE: One careful owner...", voice: "sleazy and untrustworthy, too good to be true" },
     { type: "Pyramid Scheme", hook: "I wasn't sure at first, but...", voice: "product focused, obfuscates truth of the matter" },
-  { type: "Caution", hook: "CAUTION: May cause...", voice: "nested sentences with compounding structure, unnecessarily confusing" },
-  { type: "Yelp", hook: "I don't normally do this but...", voice: "grievance spiral, starts calm then deteriorates" },
+    { type: "Yelp", hook: "I don't normally do this but...", voice: "grievance spiral, starts calm then deteriorates" },
 ];
 
 async function getWikiArticle() {
