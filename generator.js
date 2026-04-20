@@ -23,8 +23,7 @@ const FORMATS = [
   { type: "Supermarket", hook: "Buy now and get an extra X when you buy Y", voice: "shouty, trying to confuse the fact these are commodity items on a race to the bottom" },
   { type: "Insurance", hook: "Following a recent incident...", voice: "factual but clearly telling one side of the story" },
   { type: "Classified", hook: "FOR SALE: One careful owner...", voice: "sleazy and untrustworthy, too good to be true" },
-  { type: "Church", hook: "Join us this Sunday for...", voice: "earnest, thinks it is onto something, but the something is bland as can be" },
-  { type: "Pyramid Scheme", hook: "I wasn't sure at first, but...", voice: "product focused, obfuscates truth of the matter" },
+    { type: "Pyramid Scheme", hook: "I wasn't sure at first, but...", voice: "product focused, obfuscates truth of the matter" },
   { type: "Caution", hook: "CAUTION: May cause...", voice: "nested sentences with compounding structure, unnecessarily confusing" },
   { type: "Yelp", hook: "I don't normally do this but...", voice: "grievance spiral, starts calm then deteriorates" },
 ];
@@ -43,7 +42,7 @@ export async function generateAd() {
   const [a, b] = await Promise.all([getWikiArticle(), getWikiArticle()]);
   const format = FORMATS[Math.floor(Math.random() * FORMATS.length)];
 
-  const prompt = `You are an advertising copywriter generating a fake advertisement.
+  const prompt = `You are a deranged advertising copywriter who has been given two completely unrelated Wikipedia subjects and must produce a fake advertisement that treats their combination as completely normal.
 
 You have been given two Wikipedia article subjects:
 - Subject A: ${a.title} — ${a.summary}
@@ -53,18 +52,22 @@ Ad format: ${format.type}
 Tone of voice: ${format.voice}
 Content hook: ${format.hook}
 
-First, invent a fake brand name that combines or references both subjects. It should sound like a real brand — not a joke name, not a pun. Deadpan is funnier than obvious.
+BRAND NAME:
+Invent a fake brand name that is obviously wrong — it should sound like someone fed both subjects into a name generator and hit enter without checking. Not a pun. Not a joke. Just confidently incorrect. Like a company that should not exist.
 
-Then write the ad in three parts:
-1. headline — one punchy sentence in the tone of the format
-2. adCopy — 2-3 sentences of body copy that follow the headline. Keep it under 220 characters.
-3. imageQuery — a 2-3 word Unsplash search term that would find a visually striking photo related to the subjects or brand. Should return real photos, not abstractions.
-
-Rules:
+COPY RULES:
+- You must include at least one specific factual detail from EACH Wikipedia subject, used completely out of context but stated with total conviction
+- The ad must go somewhere unexpected — start in format, then let the combination pull it somewhere it shouldn't go
 - Never acknowledge the subjects are unrelated
-- Write with complete sincerity — no winking at the audience
+- Write with the unhinged sincerity of someone who sees no problem here whatsoever
 - The brand name should appear naturally in the copy
 - Do not use the words: revolutionary, game-changing, innovative, unlock, leverage, seamlessly
+- adCopy must be under 220 characters
+
+OUTPUT:
+1. headline — one punchy sentence in the tone of the format
+2. adCopy — 2-3 sentences. Start in format voice, let it drift.
+3. imageQuery — a 2-3 word Unsplash search term for a visually striking real photo related to the subjects
 
 Return ONLY valid JSON, no markdown, no backticks:
 {"brandName": "...", "headline": "...", "adCopy": "...", "imageQuery": "..."}`;

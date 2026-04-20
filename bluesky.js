@@ -1,5 +1,5 @@
 import fetch from "node-fetch";
-import { uploadImageToBluesky } from "./images.js";
+import { fetchUnsplashImage, uploadImageToBluesky } from "./images.js";
 
 const BSKY_API = "https://bsky.social/xrpc";
 
@@ -33,13 +33,12 @@ async function createPost(session, text, replyTo = null, embedImage = null) {
     };
   }
 
-  // TODO: wire in when images.js is implemented
-  // if (embedImage) {
-  //   record.embed = {
-  //     $type: "app.bsky.embed.images",
-  //     images: [{ image: embedImage, alt: embedImage.alt }],
-  //   };
-  // }
+  if (embedImage) {
+    record.embed = {
+      $type: "app.bsky.embed.images",
+      images: [{ image: embedImage.blob, alt: embedImage.alt }],
+    };
+  }
 
   const res = await fetch(`${BSKY_API}/com.atproto.repo.createRecord`, {
     method: "POST",
@@ -68,23 +67,21 @@ function buildPostRef(post) {
 export async function postAd(ad) {
   const session = await createSession();
 
-  // TODO: fetch and upload image when images.js is implemented
-  // const imageUrl = await fetchUnsplashImage(ad.imageQuery);
-  // const blobRef = imageUrl ? await uploadImageToBluesky(imageUrl, session.accessJwt) : null;
+  const image = await fetchUnsplashImage(ad.imageQuery);
+  const blobRef = image ? await uploadImageToBluesky(image, session.accessJwt) : null;
 
   const truncate = (str, max) => str.length > max ? str.slice(0, max - 1) + "…" : str;
   const subjectA = truncate(ad.subjectA, 40);
   const subjectB = truncate(ad.subjectB, 40);
   const credits = `📡 ${subjectA} + ${subjectB}`;
 
-  const post1Text = [
-    `[${ad.format.toUpperCase()}]`,
-    ad.brandName,
-    ad.headline,
-    credits,
-  ].join("\n");
+  const header = `[${ad.format.toUpperCase()}]\n${ad.brandName}\n`;
+  const footer = `\n${credits}`;
+  const headlineMax = 300 - header.length - footer.length;
+  const headline = truncate(ad.headline, headlineMax);
+  const post1Text = `${header}${headline}${footer}`;
 
-  const post1 = await createPost(session, post1Text);
+  const post1 = await createPost(session, post1Text, null, blobRef);
   const post1Ref = buildPostRef(post1);
 
   const post2Text = ad.adCopy;
