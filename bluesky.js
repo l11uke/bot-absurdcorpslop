@@ -64,6 +64,28 @@ function buildPostRef(post) {
   return { uri: post.uri, cid: post.cid };
 }
 
+export async function deletePost(uri) {
+  const session = await createSession();
+  const [, , , did, , rkey] = uri.split("/");
+  const res = await fetch(`${BSKY_API}/com.atproto.repo.deleteRecord`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session.accessJwt}`,
+    },
+    body: JSON.stringify({
+      repo: did,
+      collection: "app.bsky.feed.post",
+      rkey,
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Delete failed: ${res.status} ${err}`);
+  }
+  console.log(`Deleted post: ${uri}`);
+}
+
 export async function postAd(ad) {
   const session = await createSession();
 
@@ -92,6 +114,7 @@ export async function postAd(ad) {
 
   await createPost(session, post2Text, replyRef);
 
-  console.log(`Posted: ${ad.brandName} — ${ad.format}`);
+console.log(`Posted: ${ad.brandName} — ${ad.format}`);
   console.log(`Thread root: ${post1.uri}`);
+  return post1.uri;
 }
