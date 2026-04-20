@@ -9,8 +9,7 @@ const FORMATS = [
   { type: "Late Night TV", hook: "But wait, there's more", voice: "begging you not to switch off" },
   { type: "Wellness", hook: "Your body deserves...", voice: "inventing medical issues you don't have, to seed dependence" },
   { type: "Financial", hook: "Don't leave money on the table", voice: "get in early and you'll make money, don't miss out, hint at scarcity" },
-  { type: "Political", hook: "Did you know X received funding from Y, do not trust them in the election this year...", voice: "fear mongering and allude to others indirectly" },
-  { type: "Legal", hook: "A common side effect from X is suffering from the negative impacts associated with Y", voice: "your mileage may vary, we are not responsible" },
+    { type: "Legal", hook: "A common side effect from X is suffering from the negative impacts associated with Y", voice: "your mileage may vary, we are not responsible" },
   { type: "Academic", hook: "X is proven to increase the impact of Y on the environment", voice: "assertive, debate team nerd" },
   { type: "Dating", hook: "I'm a local X, looking for sexy Y in my county", voice: "cheesy and early 2000s language" },
   { type: "Real Estate", hook: "The value of properties is sky rocketing if you have your own X", voice: "tacky and obvious, mutton dressed up as lamb" },
@@ -62,7 +61,7 @@ COPY RULES:
 - Write with the unhinged sincerity of someone who sees no problem here whatsoever
 - The brand name should appear naturally in the copy
 - Do not use the words: revolutionary, game-changing, innovative, unlock, leverage, seamlessly
-- adCopy must be under 220 characters
+- adCopy must be under 220 characters. Front-load the most specific and wrong detail first — the last sentence is the one that gets cut.
 
 OUTPUT:
 1. headline — one punchy sentence in the tone of the format
