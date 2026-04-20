@@ -10,6 +10,18 @@ Every 24 hours, it:
 
 The humor comes from corporate earnestness applied to completely wrong subjects.
 
+## On misinformation and satire
+
+This project started as a joke and became an accidental experiment in how easily large language models can be weaponised — even unintentionally — against public information sources.
+
+Wikipedia contains millions of articles about real people, real places, real events, and real science. An LLM given random combinations of that content and instructed to write with sincerity will produce output that looks authoritative, sounds plausible, and attributes fabricated claims to real subjects. During development this bot generated a fake political corruption accusation against a named choreographer, a fraudulent classified ad attributing dodgy goods to a named NFL player, and a fake academic finding stated as proven fact.
+
+None of it was malicious. All of it was dangerous.
+
+The mitigations applied here — removing formats that structurally produce defamatory output, instructing the model never to use real names, replacing Wikipedia attribution with a satire disclaimer — are effective but imperfect. The model occasionally slips. The formats that feel safest can still cause harm with the wrong subject combination.
+
+If you're building something similar, the lesson is that absurdist intent does not produce absurdist output at scale. The same pipeline that generates a funny ad about Ottoman Egypt and a Ohio courthouse will, given enough runs, generate something that looks like a real accusation about a real person. Design accordingly.
+
 ---
 
 ## Thread structure

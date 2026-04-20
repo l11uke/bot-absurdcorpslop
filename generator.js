@@ -53,6 +53,8 @@ COPY RULES:
 - Write with the unhinged sincerity of someone who sees no problem here whatsoever
 - The brand name should appear naturally in the copy
 - Do not use the words: revolutionary, game-changing, innovative, unlock, leverage, seamlessly
+- Never use real names of living or historical people from the Wikipedia subjects in the copy — refer to them only by role, profession, or category (e.g. "a Stuttgart choreographer" not "Eric Gauthier")
+- Never use real business names from the Wikipedia subjects — refer to them by type only
 - adCopy must be under 220 characters. Front-load the most specific and wrong detail first — the last sentence is the one that gets cut.
 
 OUTPUT:

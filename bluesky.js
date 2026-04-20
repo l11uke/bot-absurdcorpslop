@@ -71,9 +71,7 @@ export async function postAd(ad) {
   const blobRef = image ? await uploadImageToBluesky(image, session.accessJwt) : null;
 
   const truncate = (str, max) => str.length > max ? str.slice(0, max - 1) + "…" : str;
-  const subjectA = truncate(ad.subjectA, 40);
-  const subjectB = truncate(ad.subjectB, 40);
-  const credits = `📡 ${subjectA} + ${subjectB}`;
+  const credits = `#satire #absurdcorpslop`;
 
   const header = `[${ad.format.toUpperCase()}]\n${ad.brandName}\n`;
   const footer = `\n${credits}`;
@@ -84,7 +82,8 @@ export async function postAd(ad) {
   const post1 = await createPost(session, post1Text, null, blobRef);
   const post1Ref = buildPostRef(post1);
 
-  const post2Text = ad.adCopy;
+    const post2Text = truncate(ad.adCopy, 300);
+
 
   const replyRef = {
     root: post1Ref,
