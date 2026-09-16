@@ -95,11 +95,22 @@ Clone and install:
     npm install
     cp .env.example .env
 
-Edit .env with your keys, then:
+Edit .env with your keys, then start with PM2:
 
-    npm start
+    npm install -g pm2
+    pm2 start bot.js --name absurdcorpslop --cwd $(pwd)
+    pm2 save
+    pm2 startup
 
 The bot posts immediately on startup, then every 24 hours.
+
+### Recommended hosting
+
+A Raspberry Pi or similar always-on Linux machine running Raspberry Pi OS. PM2 with systemd handles process management and reboot survival natively on Linux. Windows hosting is not recommended — PM2's named pipe implementation is unreliable on Windows.
+
+### Wikipedia fetch
+
+The bot uses curl as a subprocess for Wikipedia API calls rather than node-fetch. Node.js 24's TLS stack can stall on Wikimedia's servers depending on network configuration — curl handles this cleanly. curl must be available on the host machine (it is by default on Raspberry Pi OS).
 
 ### Bluesky App Password
 
@@ -134,6 +145,7 @@ Formats removed during development for defamation or misinformation risk: Politi
 - At once daily: approximately $0.06/month
 
 ---
+
 ## Roadmap
 
 - [ ] Engagement-based retention — check like/repost counts before deleting, extend life of posts above a threshold
@@ -141,6 +153,7 @@ Formats removed during development for defamation or misinformation risk: Politi
 - [ ] Per-format character tuning — some formats consistently run long, worth tailoring limits per type
 
 ---
+
 ## License
 
 MIT
