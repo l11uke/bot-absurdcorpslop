@@ -1,5 +1,6 @@
 import "dotenv/config";
 import fetch from "node-fetch";
+import { execSync } from "child_process";
 
 const FORMATS = [
   { type: "Infomercial", hook: "Are you tired of...", voice: "desperate, breathless, assumes the listener is suffering" },
@@ -356,9 +357,11 @@ function randomConcept() {
 }
 
 async function getWikiArticle() {
-  const res = await fetch("https://en.wikipedia.org/api/rest_v1/page/random/summary");
-  if (!res.ok) throw new Error(`Wikipedia API error: ${res.status}`);
-  const data = await res.json();
+  const result = execSync(
+    'curl -sL --max-time 10 "https://en.wikipedia.org/api/rest_v1/page/random/summary"',
+    { encoding: "utf8" }
+  );
+  const data = JSON.parse(result);
   return {
     title: data.title,
     summary: data.extract ? data.extract.slice(0, 300) : "",
