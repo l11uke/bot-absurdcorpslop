@@ -1,404 +1,111 @@
 import "dotenv/config";
 import fetch from "node-fetch";
 import { execSync } from "child_process";
+import {
+  FORMATS, CONCEPTS, OBJECTS, STAKES, BREAKDOWNS,
+  COUNT_UNITS, MEASURE_UNITS, OBJECT_SHARE, SITUATIONS,
+} from "./pools.js";
 
-export const FORMATS = [
-  { type: "Infomercial", hook: "Are you tired of...", voice: "desperate, breathless, assumes the listener is suffering" },
-  { type: "Luxury", hook: "For those who understand...", voice: "quiet, assured, slightly contemptuous of people who need to be told. Brief. Never explains itself. One clause per sentence." },
-  { type: "Tech Startup", hook: "We rebuilt X from the ground up", voice: "a solution looking for a problem, states the obvious without thinking objectively" },
-  { type: "Gov PSA", hook: "Did you know...", voice: "clear, concise, blame shifting to the reader" },
-  { type: "Late Night TV", hook: "But wait, there's more", voice: "begging you not to switch off" },
-  { type: "Wellness", hook: "Your body deserves...", voice: "inventing medical issues you don't have, to seed dependence" },
-  { type: "Financial", hook: "Don't leave money on the table", voice: "get in early and you'll make money, don't miss out, hint at scarcity" },
-  { type: "Legal", hook: "A common side effect from X is suffering from the negative impacts associated with Y", voice: "your mileage may vary, we are not responsible" },
-  { type: "Real Estate", hook: "The value of properties is sky rocketing if you have your own X", voice: "tacky and obvious, mutton dressed up as lamb" },
-  { type: "Job Posting", hook: "Are you an experienced X maintenance professional, looking for work in the Y industry?", voice: "genuine but oblivious" },
-  { type: "Warning", hook: "TOXIC - when taken X can be harmful to your Y", voice: "worst case scenario" },
-  { type: "LinkedIn", hook: "Don't count your X before they Y - trust me, i turned a startup into a 500m ARR business", voice: "delusional confidence, humble-brag disguised as wisdom" },
-  { type: "Kickstarter", hook: "When you have all your X and they are out of control, you need a Y", voice: "nervous, but sure of themselves, self made bootstrap approach" },
-  { type: "Supermarket", hook: "Buy now and get an extra X when you buy Y", voice: "shouty, trying to confuse the fact these are commodity items on a race to the bottom" },
-  { type: "Insurance", hook: "Following a recent incident...", voice: "factual but clearly telling one side of the story" },
-  { type: "Classified", hook: "FOR SALE: One careful owner...", voice: "sleazy and untrustworthy, too good to be true" },
-  { type: "Pyramid Scheme", hook: "I wasn't sure at first, but...", voice: "product focused, obfuscates truth of the matter" },
-  { type: "Caution", hook: "CAUTION: May cause...", voice: "nested sentences with compounding structure, unnecessarily confusing" },
-  { type: "Yelp", hook: "I don't normally do this but...", voice: "grievance spiral, starts calm then deteriorates" },
-];
+export { FORMATS, CONCEPTS };
 
-export const CONCEPTS = [
-  // Geological / earth science
-  "a sedimentary layer",
-  "an alluvial fan",
-  "a lava tube",
-  "a tectonic plate boundary",
-  "a glacial erratic",
-  "a sinkhole",
-  "a salt flat",
-  "a thermal vent",
-  "a limestone karst",
-  "a mudflat",
-  "a moraine",
-  "a basalt column",
-  "a fossil bed",
-  "a fault line",
-  "a geyser field",
-  "a coral atoll",
-  "a river delta",
-  "a sandstone arch",
-  "a volcanic caldera",
-  "a permafrost layer",
-  "a gravel bar",
-  "a rock cycle",
-  "a soil horizon",
-  "an igneous intrusion",
-  "a metamorphic aureole",
-  "a submarine canyon",
-  "a continental shelf",
-  "a rift valley",
-  "a magma chamber",
-  "a pumice field",
-  // Food and drink
-  "a sourdough starter",
-  "the Maillard reaction",
-  "a reduction sauce",
-  "a fermentation vessel",
-  "a brine solution",
-  "a roux",
-  "a clarified butter",
-  "a smoking point",
-  "a mother vinegar",
-  "a proofing drawer",
-  "a dry rub",
-  "an emulsion",
-  "a consommé",
-  "a mirepoix",
-  "a deglazed pan",
-  "a blanching process",
-  "a render of fat",
-  "a mise en place",
-  "a laminated dough",
-  "a cold brew ratio",
-  "a caramelisation point",
-  "a stock reduction",
-  "a cure of salt and sugar",
-  "a vacuum seal",
-  "a water bath",
-  "a tempering process",
-  "a bloom of gelatin",
-  "a knife bevel",
-  "a mandoline setting",
-  "a pressure differential in an espresso portafilter",
-  "a yeast colony",
-  "a whey protein",
-  "a seed oil",
-  "a grain ferment",
-  "a barrel char",
-  "a hop addition",
-  "a malting floor",
-  "a pectin set",
-  "a fat cap",
-  "a meat rest",
-  // Mathematical concepts
-  "a prime number",
-  "an asymptote",
-  "a Fibonacci sequence",
-  "a null set",
-  "a probability distribution",
-  "a topological surface",
-  "a Möbius strip",
-  "a fractal boundary",
-  "a vector field",
-  "a polynomial root",
-  "an imaginary number",
-  "a Venn diagram",
-  "a recursive function",
-  "a graph vertex",
-  "a standard deviation",
-  "a logarithmic scale",
-  "a Bayesian prior",
-  "a convex hull",
-  "a matrix determinant",
-  "a Taylor series",
-  "a harmonic mean",
-  "a geometric proof",
-  "a set intersection",
-  "a differential equation",
-  "a saddle point",
-  "a Cartesian plane",
-  "a binary tree",
-  "a Fourier transform",
-  "a confidence interval",
-  "a hyperbolic curve",
-  "an eigenvalue",
-  "a statistical outlier",
-  "a Boolean operator",
-  "a permutation group",
-  "a golden ratio",
-  "a pi approximation",
-  "a number line",
-  "a median value",
-  "a regression line",
-  "a combinatorial proof",
-  // Astronomical concepts
-  "a stellar nursery",
-  "an accretion disk",
-  "a planetary nebula",
-  "a dark matter halo",
-  "a gravitational lens",
-  "a magnetosphere",
-  "a solar wind",
-  "a Lagrange point",
-  "an orbital resonance",
-  "a stellar parallax",
-  "a redshift",
-  "a cosmic ray",
-  "a neutron star interior",
-  "a binary star system",
-  "a protoplanetary disk",
-  "a Kuiper belt object",
-  "a coronal mass ejection",
-  "a tidal locking mechanism",
-  "a retrograde orbit",
-  "a stellar classification",
-  "a Hertzsprung-Russell diagram",
-  "a light cone",
-  "a gravitational wave",
-  "a cosmic microwave background",
-  "a stellar evolution sequence",
-  "a planetary transit",
-  "a perihelion passage",
-  "a zodiacal light",
-  "a synodic period",
-  "a barycentre",
-  // Architectural elements
-  "a load-bearing wall",
-  "a flying buttress",
-  "a barrel vault",
-  "a cantilever",
-  "a thermal bridge",
-  "a damp course",
-  "a lintel",
-  "a soffit",
-  "a parapet",
-  "a curtain wall system",
-  "a post-tension slab",
-  "a moment frame",
-  "a shear wall",
-  "a vapour barrier",
-  "a structural ridge beam",
-  "a foundation pile",
-  "an expansion joint",
-  "a grout bed",
-  "a weep hole",
-  "a reveal",
-  "a threshold detail",
-  "a column capital",
-  "a spandrel panel",
-  "a clerestory window",
-  "a coffered ceiling",
-  "a plenum space",
-  "a double-skin facade",
-  "a tension cable",
-  "a transfer slab",
-  "an acoustic baffle",
-  "a datum line",
-  "a setback requirement",
-  "a floor-to-ceiling ratio",
-  "a thermal mass",
-  "a passive solar orientation",
-  // Weather phenomena
-  "a temperature inversion",
-  "an orographic lift",
-  "a sea breeze front",
-  "a föhn effect",
-  "a convective cell",
-  "a pressure gradient",
-  "a dew point",
-  "an albedo effect",
-  "an urban heat island",
-  "a jet stream",
-  "a cold front passage",
-  "an anticyclonic rotation",
-  "a supercooled droplet",
-  "a virga",
-  "a mammatus cloud",
-  "a lenticular cloud formation",
-  "a fog bank",
-  "a hail embryo",
-  "a wind shear layer",
-  "a thermal updraft",
-  "a squall line",
-  "a mesocyclone",
-  "a katabatic wind",
-  "a harmattan",
-  "a haboob",
-  "a pea souper",
-  "a radiation frost",
-  "a freezing rain event",
-  "a subtropical ridge",
-  "a polar vortex displacement",
-  // Fictional / conceptual locations
-  "a liminal space",
-  "a void between floors",
-  "an unmapped territory",
-  "a threshold between jurisdictions",
-  "a disputed border zone",
-  "a negative space",
-  "an interstitial zone",
-  "a dead letter office",
-  "a buffer state",
-  "a demilitarised zone",
-  "a neutral ground",
-  "a no man's land",
-  "a transit lounge",
-  "an airside zone",
-  "a bonded warehouse",
-  "a freeport",
-  "a tax haven",
-  "an extraterritorial enclave",
-  "a cartographic blank",
-  "a terra incognita",
-  "an unincorporated area",
-  "a commons",
-  "a grey zone",
-  "a staging area",
-  "a holding pattern",
-  "an anteroom",
-  "a dead end",
-  "a threshold",
-  "an edge condition",
-  "a margin",
-  // Material science / physics
-  "a stress fracture",
-  "a yield point",
-  "a fatigue cycle",
-  "a tensile strength",
-  "a shear modulus",
-  "a coefficient of friction",
-  "a thermal expansion joint",
-  "a crystalline lattice",
-  "a grain boundary",
-  "a surface tension",
-  "a capillary action",
-  "a viscosity gradient",
-  "a phase transition",
-  "a latent heat",
-  "a specific gravity",
-  "a refractive index",
-  "a magnetic hysteresis",
-  "a Doppler shift",
-  "a standing wave",
-  "a resonant frequency",
-  "a half-life",
-  "a decay chain",
-  "a fission product",
-  "a plasma state",
-  "a Bose-Einstein condensate",
-  "a superconducting threshold",
-  "a quantum tunnelling event",
-  "a spin state",
-  "a wave function collapse",
-  "an entropy increase",
-  // Biological / ecological concepts
-  "a trophic cascade",
-  "a keystone species role",
-  "a niche partitioning",
-  "a succession stage",
-  "a carrying capacity",
-  "a mutualistic relationship",
-  "a parasite load",
-  "a seed bank",
-  "a mycorrhizal network",
-  "a pheromone trail",
-  "a courtship display",
-  "a territorial boundary",
-  "a migration corridor",
-  "a population bottleneck",
-  "a genetic drift event",
-  "a horizontal gene transfer",
-  "an endosymbiotic relationship",
-  "a biomass pyramid",
-  "a decomposition rate",
-  "a nutrient cycle",
-  "an osmotic pressure",
-  "a cell membrane",
-  "a mitotic division",
-  "a protein folding",
-  "an enzyme cascade",
-  "an immune response",
-  "an apoptosis signal",
-  "a circadian rhythm",
-  "a vestigial structure",
-  "a convergent evolution",
-  // Economic / systems concepts
-  "a supply chain bottleneck",
-  "a price floor",
-  "a price ceiling",
-  "a sunk cost",
-  "a negative externality",
-  "a tragedy of the commons",
-  "a liquidity trap",
-  "a yield curve",
-  "a shadow price",
-  "a deadweight loss",
-  "a moral hazard",
-  "a principal-agent problem",
-  "a network effect",
-  "a switching cost",
-  "a first-mover advantage",
-  "a market clearing price",
-  "an opportunity cost",
-  "a diminishing return",
-  "a comparative advantage",
-  "a prisoner's dilemma",
-];
+const MODEL = "claude-haiku-4-5-20251001";
+export const LIMITS = { headline: 140, body: 150, punchline: 100 };
 
-function randomConcept() {
-  return CONCEPTS[Math.floor(Math.random() * CONCEPTS.length)];
+export function pick(list, rng = Math.random) {
+  return list[Math.floor(rng() * list.length)];
 }
 
-async function getWikiArticle() {
-  const result = execSync(
-    'curl -sL --max-time 10 "https://en.wikipedia.org/api/rest_v1/page/random/summary"',
-    { encoding: "utf8" }
-  );
-  const data = JSON.parse(result);
+const AVOID_NUMBERS = new Set([19, 47]);
+
+export function randomFigure(rng = Math.random) {
+  const roll = rng();
+  if (roll < 0.6) {
+    let n;
+    do {
+      n = 3 + Math.floor(rng() * 997);
+    } while (n % 10 === 0 || AVOID_NUMBERS.has(n));
+    return `${n} ${pick(COUNT_UNITS, rng)}`;
+  }
+  if (roll < 0.85) {
+    const dollars = 2 + Math.floor(rng() * 498);
+    const cents = Math.floor(rng() * 100);
+    return `$${dollars}.${String(cents).padStart(2, "0")}`;
+  }
+  const whole = 1 + Math.floor(rng() * 98);
+  const tenth = 1 + Math.floor(rng() * 9);
+  return `${whole}.${tenth} ${pick(MEASURE_UNITS, rng)}`;
+}
+
+export function drawSeed(wiki, rng = Math.random, opts = {}) {
+  const { formatType, forceSituation = false } = opts;
+  const format = formatType
+    ? FORMATS.find((f) => f.type === formatType)
+    : pick(FORMATS, rng);
+  if (!format) throw new Error(`Unknown format: ${formatType}`);
+
+  const bIsObject = rng() < OBJECT_SHARE;
+  const subjectB = bIsObject ? pick(OBJECTS, rng) : pick(CONCEPTS, rng);
+
+  let situation = null;
+  const sit = SITUATIONS[format.type];
+  if (sit && (forceSituation || rng() < sit.chance)) {
+    situation = pick(sit.items, rng).replaceAll("{B}", subjectB);
+  }
+
   return {
-    title: data.title,
-    summary: data.extract ? data.extract.slice(0, 300) : "",
+    format,
+    wiki,
+    subjectB,
+    bIsObject,
+    situation,
+    stake: situation ? null : pick(STAKES, rng),
+    figure: randomFigure(rng),
+    breakdown: pick(BREAKDOWNS, rng),
   };
 }
 
-export function buildPrompt(format, wiki, concept) {
+export function buildPrompt(seed) {
+  const { format, wiki, subjectB, situation, stake, figure, breakdown } = seed;
+  const seeds = [
+    `- Number to use: ${figure}. It must appear in the body or punchline exactly as written.`,
+    situation ? `- Incident: ${situation}` : `- Stake: the whole dispute is about ${stake}.`,
+    `- Breakdown shape (use loosely): ${breakdown}.`,
+  ].join("\n");
+
   return `You are a sincere customer, employee, or business owner writing in the "${format.type}" format. You have been given two unrelated subjects. In your world they are connected, and you have been living inside that connection for some time.
 
 Subject A (from Wikipedia): ${wiki.title} — ${wiki.summary}
-Subject B (a concept): ${concept}
+Subject B (a concept or object): ${subjectB}
 
 Format: ${format.type}
 Format voice: ${format.voice}
 Format hook: ${format.hook}
+
+SEEDS (these are fixed, build the piece around them):
+${seeds}
 
 BRAND NAME:
 Invent a brand name that is obviously wrong. It should sound like both subjects went through a name generator unchecked. Confidently incorrect, no puns.
 
 THE ARC (applies to every format):
 - headline: opens fully in the format voice and sounds normal for about one clause
-- body: composure slips. A personal situation appears, with a specific number, a duration, or a named relative. The narrator treats it as routine.
+- body: composure slips. A personal situation appears. The narrator treats it as routine.
 - punchline: total breakdown. The narrator is far past the point of reason, still polite, and ends with a small practical request that shows how bad things have become.
 
 RULES:
 - Include at least one specific detail from Subject A and make Subject B load-bearing in the situation
-- Mundane stakes: money, snacks, spouses, deadlines, parking, refunds
-- Specific numbers beat vague ones. "Day 19", not "for a while".
+- Do not make a spouse or marriage the source of the problem
 - Never acknowledge the subjects are unrelated
 - Never use real names of living or historical people from Subject A. Refer to them by role or category.
 - Never use real business names from Subject A. Refer to them by type only.
+- Never name real platforms or brands. Refer to them by type only.
+- No street addresses, phone numbers or email addresses. Keep private homes and streets fictional and unnamed.
 - Do not use the words: revolutionary, game-changing, innovative, unlock, leverage, seamlessly
 
 OUTPUT:
-1. headline — one sentence
-2. body — 1-2 sentences. Max 150 characters.
-3. punchline — the final sentence. Max 100 characters. This line must survive intact.
+1. headline — one sentence. Max ${LIMITS.headline} characters.
+2. body — 1-2 sentences. Max ${LIMITS.body} characters.
+3. punchline — the final sentence. Max ${LIMITS.punchline} characters. This line must survive intact.
 4. imageQuery — a 2-3 word Unsplash search term for a visually striking real photo
 
 Return ONLY valid JSON, no markdown, no backticks:
@@ -419,38 +126,91 @@ export function parseAdResponse(text) {
   return parsed;
 }
 
-export async function generateAd() {
-  const wiki = await getWikiArticle();
-  const concept = randomConcept();
-  const format = FORMATS[Math.floor(Math.random() * FORMATS.length)];
-  const prompt = buildPrompt(format, wiki, concept);
+export function lengthProblems(ad) {
+  const out = [];
+  for (const [field, max] of Object.entries(LIMITS)) {
+    const len = [...ad[field]].length;
+    if (len > max) out.push({ field, len, max });
+  }
+  return out;
+}
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+export function getWikiArticle() {
+  const result = execSync(
+    'curl -sL --max-time 10 "https://en.wikipedia.org/api/rest_v1/page/random/summary"',
+    { encoding: "utf8" }
+  );
+  const data = JSON.parse(result);
+  return {
+    title: data.title,
+    summary: data.extract ? data.extract.slice(0, 300) : "",
+  };
+}
+
+async function askClaude(messages, fetchImpl) {
+  const res = await fetchImpl("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "x-api-key": process.env.ANTHROPIC_API_KEY,
       "anthropic-version": "2023-06-01",
     },
-    body: JSON.stringify({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 1000,
-      messages: [{ role: "user", content: prompt }],
-    }),
+    body: JSON.stringify({ model: MODEL, max_tokens: 1000, messages }),
   });
-
   if (!res.ok) throw new Error(`Anthropic API error: ${res.status}`);
   const data = await res.json();
-  const parsed = parseAdResponse(data.content[0].text.trim());
+  return data.content[0].text.trim();
+}
+
+export async function generateAd({
+  fetchImpl = fetch,
+  wikiImpl = getWikiArticle,
+  rng = Math.random,
+  formatType,
+  forceSituation = false,
+} = {}) {
+  const wiki = wikiImpl();
+  const seed = drawSeed(wiki, rng, { formatType, forceSituation });
+  const messages = [{ role: "user", content: buildPrompt(seed) }];
+
+  const firstText = await askClaude(messages, fetchImpl);
+  let ad = parseAdResponse(firstText);
+  let retried = false;
+
+  const problems = lengthProblems(ad);
+  if (problems.length) {
+    retried = true;
+    const detail = problems
+      .map((p) => `${p.field} is ${p.len} characters (max ${p.max})`)
+      .join("; ");
+    messages.push({ role: "assistant", content: firstText });
+    messages.push({
+      role: "user",
+      content: `Too long: ${detail}. Rewrite it with the same idea and every field inside its limit. Return ONLY the JSON.`,
+    });
+    try {
+      ad = parseAdResponse(await askClaude(messages, fetchImpl));
+    } catch (err) {
+      // retry unusable: keep the first result
+    }
+  }
 
   return {
-    brandName: parsed.brandName,
-    headline: parsed.headline,
-    body: parsed.body,
-    punchline: parsed.punchline,
-    imageQuery: parsed.imageQuery,
-    format: format.type,
+    brandName: ad.brandName,
+    headline: ad.headline,
+    body: ad.body,
+    punchline: ad.punchline,
+    imageQuery: ad.imageQuery,
+    format: seed.format.type,
     subjectA: wiki.title,
-    subjectB: concept,
+    subjectB: seed.subjectB,
+    seed: {
+      figure: seed.figure,
+      stake: seed.stake,
+      situation: seed.situation,
+      breakdown: seed.breakdown,
+      bIsObject: seed.bIsObject,
+    },
+    retried,
   };
 }
