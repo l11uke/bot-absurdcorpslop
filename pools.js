@@ -423,9 +423,34 @@ export const FORMAT_LIMITS = {
   Marketplace: { body: 215, punchline: 80 }
 };
 
-export const FORMAT_NOTES = {
-  Marketplace: "The body is a thread of at least three Me:/Them: exchanges. Every exchange adds one new condition, demand or detail, so the situation gets worse with each line. The punchline is the last message in the thread."
+// Haiku follows word budgets far better than character limits. Words go in the prompt, characters validate.
+export const DEFAULT_WORDS = { headline: 20, body: 25, punchline: 14 };
+export const FORMAT_WORDS = {
+  Marketplace: { body: 30, punchline: 12 }
 };
+
+export const FORMAT_NOTES = {
+  Marketplace: "The body is exactly three messages in one line of text: Me: then Them: then Me:, each message at most 9 words, each adding one new condition, demand or detail so the situation gets worse. The punchline is the fourth and last message."
+};
+
+export const ENDING_SHARE = 0.75;
+
+export const ENDINGS = [
+  "a new rule announced as if it had always existed",
+  "a price quoted for something that was supposed to be free",
+  "a sign-off that thanks someone for something never mentioned",
+  "an apology addressed to an object",
+  "an offer withdrawn without explanation",
+  "a deadline given in an odd unit of time",
+  "a confident claim that the problem is now solved, which it is not",
+  "an instruction to someone who is not present",
+  "a list of three items where the third item changes everything",
+  "a quiet admission about where the writer is sleeping",
+  "a threat to leave a second review of exactly the same thing",
+  "a calm statement of a new, much smaller expectation",
+  "a name given to the problem, used like a family member",
+  "a note that the writer will be back in the same spot tomorrow"
+];
 
 export const SITUATIONS = {
   Marketplace: {

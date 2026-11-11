@@ -11,11 +11,12 @@ test("parseArgs reads a format and the --incident flag", () => {
 test("formatAd shows the ad and its seeds", () => {
   const out = formatAd({
     format: "Yelp", brandName: "Brand", headline: "H", body: "B", punchline: "P",
-    subjectA: "SA", subjectB: "SB", imageQuery: "iq", retried: true,
-    firstProblems: [{ field: "body", len: 190, max: 150 }],
-    seed: { figure: "12 kg", stake: null, situation: "an incident", breakdown: "br" },
+    subjectA: "SA", subjectB: "SB", imageQuery: "iq", retried: true, repairs: 2,
+    firstProblems: [{ field: "body", len: 190, max: 150 }, { field: "brandName", word: "alphonse" }],
+    finalProblems: [],
+    seed: { figure: "12 kg", stake: null, situation: "an incident", breakdown: "br", ending: "an offer withdrawn" },
   });
-  for (const s of ["[Yelp] Brand", "H", "B", "P", "A: SA | B: SB", "figure=12 kg", "incident=an incident", "retried: true", "first draft: body 190/150"]) {
+  for (const s of ["[Yelp] Brand", "H", "B", "P", "A: SA | B: SB", "figure=12 kg", "incident=an incident", "retried: true (repairs: 2)", "first draft: body 190/150, brandName has \"alphonse\"", "final: within limits", "ending: an offer withdrawn"]) {
     assert.ok(out.includes(s), `missing ${s}`);
   }
 });
@@ -23,8 +24,9 @@ test("formatAd shows the ad and its seeds", () => {
 test("formatAd says when the first draft was within limits", () => {
   const out = formatAd({
     format: "Yelp", brandName: "B", headline: "H", body: "B", punchline: "P",
-    subjectA: "SA", subjectB: "SB", imageQuery: "iq", retried: false, firstProblems: [],
-    seed: { figure: "1 kg", stake: "a stake", situation: null, breakdown: "br" },
+    subjectA: "SA", subjectB: "SB", imageQuery: "iq", retried: false, repairs: 0, firstProblems: [], finalProblems: [],
+    seed: { figure: "1 kg", stake: "a stake", situation: null, breakdown: "br", ending: null },
   });
   assert.ok(out.includes("first draft: within limits"));
+  assert.ok(out.includes("ending: free"));
 });

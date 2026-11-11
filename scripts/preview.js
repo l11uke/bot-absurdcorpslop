@@ -10,6 +10,11 @@ export function parseArgs(argv) {
   return opts;
 }
 
+function describe(problems) {
+  if (!problems || !problems.length) return "within limits";
+  return problems.map((p) => (p.word ? `brandName has "${p.word}"` : `${p.field} ${p.len}/${p.max}`)).join(", ");
+}
+
 export function formatAd(ad) {
   const s = ad.seed;
   return [
@@ -21,8 +26,10 @@ export function formatAd(ad) {
     `A: ${ad.subjectA} | B: ${ad.subjectB}`,
     `seed: figure=${s.figure} | ${s.situation ? "incident=" + s.situation : "stake=" + s.stake}`,
     `breakdown: ${s.breakdown}`,
-    `retried: ${ad.retried} | image: ${ad.imageQuery}`,
-    `first draft: ${ad.firstProblems && ad.firstProblems.length ? ad.firstProblems.map((p) => `${p.field} ${p.len}/${p.max}`).join(", ") : "within limits"}`,
+    `ending: ${s.ending || "free"}`,
+    `retried: ${ad.retried} (repairs: ${ad.repairs ?? 0}) | image: ${ad.imageQuery}`,
+    `first draft: ${describe(ad.firstProblems)}`,
+    `final: ${describe(ad.finalProblems)}`,
   ].join("\n");
 }
 

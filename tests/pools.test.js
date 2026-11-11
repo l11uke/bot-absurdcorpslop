@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   FORMATS, CONCEPTS, OBJECTS, STAKES, BREAKDOWNS, COUNT_UNITS, MEASURE_UNITS,
-  SITUATIONS, OBJECT_SHARE,
+  SITUATIONS, OBJECT_SHARE, ENDINGS, ENDING_SHARE, DEFAULT_WORDS, FORMAT_WORDS, FORMAT_NOTES,
 } from "../pools.js";
 
 const unique = (list) => new Set(list).size === list.length;
@@ -17,7 +17,7 @@ test("pool sizes", () => {
 });
 
 test("every pool is unique and non-empty", () => {
-  for (const [name, list] of Object.entries({ CONCEPTS, OBJECTS, STAKES, BREAKDOWNS, COUNT_UNITS, MEASURE_UNITS })) {
+  for (const [name, list] of Object.entries({ CONCEPTS, OBJECTS, STAKES, BREAKDOWNS, COUNT_UNITS, MEASURE_UNITS, ENDINGS })) {
     assert.ok(unique(list), `duplicates in ${name}`);
     for (const x of list) assert.ok(typeof x === "string" && x.trim().length > 0, `${name} blank`);
   }
@@ -51,4 +51,16 @@ test("Marketplace is a format and situations are valid", () => {
 
 test("object share is a sane fraction", () => {
   assert.ok(OBJECT_SHARE > 0 && OBJECT_SHARE < 1);
+});
+
+test("endings pool is large, unique and never asks a question", () => {
+  assert.ok(ENDINGS.length >= 12, `endings ${ENDINGS.length}`);
+  for (const e of ENDINGS) assert.ok(!e.includes("?"), `question ending: ${e}`);
+  assert.ok(ENDING_SHARE > 0 && ENDING_SHARE <= 1);
+});
+
+test("word budgets exist for every default field and Marketplace thread fits", () => {
+  for (const k of ["headline", "body", "punchline"]) assert.ok(DEFAULT_WORDS[k] > 0);
+  assert.ok(FORMAT_WORDS.Marketplace.body >= 27);
+  assert.ok(FORMAT_NOTES.Marketplace.includes("three messages"));
 });

@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   FORMATS, CONCEPTS, buildPrompt, parseAdResponse, drawSeed, randomFigure,
-  lengthProblems, generateAd, LIMITS, limitsFor,
+  lengthProblems, generateAd, LIMITS, limitsFor, wordsFor,
+  forbiddenBrandWords, brandProblems, MAX_REPAIRS,
 } from "../generator.js";
 
 const wiki = { title: "Test Article", summary: "A test summary." };
@@ -74,11 +75,13 @@ test("prompt no longer carries the example text Haiku copied", () => {
   assert.ok(!p.includes("snacks, spouses"));
 });
 
-test("prompt states the length limits", () => {
+test("prompt states word budgets", () => {
   const p = buildPrompt(drawSeed(wiki, lcg(6), { formatType: "Warning" }));
-  assert.ok(p.includes(`Max ${LIMITS.body} characters`));
-  assert.ok(p.includes(`Max ${LIMITS.punchline} characters`));
-  assert.ok(p.includes(`Max ${LIMITS.headline} characters`));
+  const w = wordsFor("Warning");
+  assert.ok(p.includes(`Max ${w.body} words`));
+  assert.ok(p.includes(`Max ${w.punchline} words`));
+  assert.ok(p.includes(`Max ${w.headline} words`));
+  assert.ok(!/Max \d+ characters/.test(p), "character limits leaked into prompt");
 });
 
 test("Marketplace gets its own limits, structure note and they appear in the prompt", () => {
@@ -86,9 +89,10 @@ test("Marketplace gets its own limits, structure note and they appear in the pro
   assert.ok(l.body > LIMITS.body && l.punchline < LIMITS.punchline);
   assert.deepEqual(limitsFor("Warning"), LIMITS);
   const p = buildPrompt(drawSeed(wiki, lcg(8), { formatType: "Marketplace" }));
-  assert.ok(p.includes(`Max ${l.body} characters`));
+  assert.ok(p.includes(`Max ${wordsFor("Marketplace").body} words`));
   assert.ok(p.includes("Format structure:"));
-  assert.ok(p.includes("Every exchange adds one new condition"));
+  assert.ok(p.includes("exactly three messages"));
+  assert.ok(p.includes("at most 9 words"));
   const w = buildPrompt(drawSeed(wiki, lcg(8), { formatType: "Warning" }));
   assert.ok(!w.includes("Format structure:"));
 });
@@ -107,9 +111,38 @@ test("incident prompts require the premise in the headline or first sentence", (
   assert.ok(!q.includes("must state this incident literally"));
 });
 
-test("brand name rule bans place names, titles and personal names from Subject A", () => {
+test("brand name rule bans place names, titles, personal names and title words", () => {
   const p = buildPrompt(drawSeed(wiki, lcg(10)));
   assert.ok(p.includes("Never put place names, titles of films, books or songs, or personal names from Subject A in the brand name"));
+  assert.ok(p.includes("never reuse a word from Subject A's title"));
+});
+
+test("an ending shape is drawn about 75% of the time and appears in the prompt as a statement rule", () => {
+  let n = 0;
+  for (let i = 1; i <= 400; i++) if (drawSeed(wiki, lcg(i * 53)).ending) n++;
+  assert.ok(n > 270 && n < 330, `ending rate off: ${n}/400`);
+  let withEnding, without;
+  for (let i = 1; i < 200 && !(withEnding && without); i++) {
+    const s = drawSeed(wiki, lcg(i));
+    if (s.ending) withEnding = s; else without = s;
+  }
+  const a = buildPrompt(withEnding);
+  assert.ok(a.includes("Punchline shape: " + withEnding.ending));
+  assert.ok(a.includes("never a question and never a request"));
+  assert.ok(!buildPrompt(without).includes("Punchline shape"));
+});
+
+test("forbiddenBrandWords takes title words and long capitalised summary words", () => {
+  const w = forbiddenBrandWords({ title: "Saint-Alphonse, Quebec", summary: "A parish near Cattaraugus County. It is small." });
+  assert.ok(w.includes("alphonse") && w.includes("quebec") && w.includes("saint"));
+  assert.ok(w.includes("cattaraugus"));
+  assert.ok(!w.includes("small") && !w.includes("a"));
+});
+
+test("brandProblems flags brand names that reuse Subject A words", () => {
+  const w = { title: "Saint-Alphonse, Quebec", summary: "" };
+  assert.deepEqual(brandProblems({ brandName: "Alphonse Asymptotic" }, w), [{ field: "brandName", word: "alphonse" }]);
+  assert.deepEqual(brandProblems({ brandName: "Wobble Holdings" }, w), []);
 });
 
 test("drawSeed is deterministic for a given rng and varies across rngs", () => {
@@ -238,17 +271,46 @@ test("over-limit output triggers exactly one retry with a 3-message conversation
   assert.equal(f.calls.length, 2);
   assert.equal(f.calls[1].messages.length, 3);
   assert.equal(f.calls[1].messages[1].role, "assistant");
-  assert.match(f.calls[1].messages[2].content, /body is \d+ characters \(max 150\)/);
+  assert.match(f.calls[1].messages[2].content, /body is \d+ characters \(max 150, about 25 words\)/);
   assert.equal(ad.body, "short");
   assert.equal(ad.retried, true);
 });
 
-test("a retry that is still too long is accepted without a third call", async () => {
+test("a repair that is still too long gets one more try, then is accepted", async () => {
   const long = goodJson({ body: "x".repeat(LIMITS.body + 40) });
-  const { f, p } = run([long, long], { formatType: "Warning" });
+  const { f, p } = run([long, long, long, long], { formatType: "Warning" });
+  const ad = await p;
+  assert.equal(MAX_REPAIRS, 2);
+  assert.equal(f.calls.length, 3);
+  assert.equal(f.calls[2].messages.length, 5);
+  assert.equal(ad.repairs, 2);
+  assert.equal(ad.finalProblems[0].field, "body");
+});
+
+test("the second repair is used when the first is still over", async () => {
+  const long = goodJson({ body: "x".repeat(LIMITS.body + 40) });
+  const { f, p } = run([long, long, goodJson({ body: "ok" })], { formatType: "Warning" });
+  const ad = await p;
+  assert.equal(f.calls.length, 3);
+  assert.equal(ad.body, "ok");
+  assert.equal(ad.repairs, 2);
+  assert.deepEqual(ad.finalProblems, []);
+});
+
+test("a brand name that reuses a Subject A word triggers a repair", async () => {
+  const bad = goodJson({ brandName: "Test Holdings" });
+  const { f, p } = run([bad, goodJson({ brandName: "Wobble Co" })], { formatType: "Warning" });
   const ad = await p;
   assert.equal(f.calls.length, 2);
-  assert.equal(ad.retried, true);
+  assert.match(f.calls[1].messages[2].content, /brandName contains "test"/);
+  assert.equal(ad.brandName, "Wobble Co");
+  assert.equal(ad.firstProblems[0].word, "test");
+});
+
+test("an API error during a repair throws", async () => {
+  const long = goodJson({ body: "x".repeat(LIMITS.body + 40) });
+  const { p } = run([long, 500], { formatType: "Warning" });
+  await assert.rejects(p, /Anthropic API error: 500/);
 });
 
 test("an unparsable retry keeps the first result", async () => {
