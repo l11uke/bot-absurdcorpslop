@@ -4,12 +4,17 @@ import { execSync } from "child_process";
 import {
   FORMATS, CONCEPTS, OBJECTS, STAKES, BREAKDOWNS,
   COUNT_UNITS, MEASURE_UNITS, OBJECT_SHARE, SITUATIONS,
+  DEFAULT_LIMITS, FORMAT_LIMITS, FORMAT_NOTES,
 } from "./pools.js";
 
 export { FORMATS, CONCEPTS };
 
 const MODEL = "claude-haiku-4-5-20251001";
-export const LIMITS = { headline: 140, body: 150, punchline: 100 };
+export const LIMITS = DEFAULT_LIMITS;
+
+export function limitsFor(formatType) {
+  return { ...DEFAULT_LIMITS, ...(FORMAT_LIMITS[formatType] || {}) };
+}
 
 export function pick(list, rng = Math.random) {
   return list[Math.floor(rng() * list.length)];
@@ -66,9 +71,13 @@ export function drawSeed(wiki, rng = Math.random, opts = {}) {
 
 export function buildPrompt(seed) {
   const { format, wiki, subjectB, situation, stake, figure, breakdown } = seed;
+  const limits = limitsFor(format.type);
+  const note = FORMAT_NOTES[format.type];
   const seeds = [
     `- Number to use: ${figure}. It must appear in the body or punchline exactly as written.`,
-    situation ? `- Incident: ${situation}` : `- Stake: the whole dispute is about ${stake}.`,
+    situation
+      ? `- Incident: ${situation} The headline or the first sentence must state this incident literally, so a reader understands the premise at once.`
+      :  `- Stake: the whole dispute is about ${stake}.`,
     `- Breakdown shape (use loosely): ${breakdown}.`,
   ].join("\n");
 
@@ -79,13 +88,13 @@ Subject B (a concept or object): ${subjectB}
 
 Format: ${format.type}
 Format voice: ${format.voice}
-Format hook: ${format.hook}
+Format hook: ${format.hook}${note ? `\nFormat structure: ${note}` : ""}
 
 SEEDS (these are fixed, build the piece around them):
 ${seeds}
 
 BRAND NAME:
-Invent a brand name that is obviously wrong. It should sound like both subjects went through a name generator unchecked. Confidently incorrect, no puns.
+Invent a brand name that is obviously wrong. It should sound like both subjects went through a name generator unchecked. Confidently incorrect, no puns. Never put place names, titles of films, books or songs, or personal names from Subject A in the brand name.
 
 THE ARC (applies to every format):
 - headline: opens fully in the format voice and sounds normal for about one clause
@@ -103,9 +112,9 @@ RULES:
 - Do not use the words: revolutionary, game-changing, innovative, unlock, leverage, seamlessly
 
 OUTPUT:
-1. headline — one sentence. Max ${LIMITS.headline} characters.
-2. body — 1-2 sentences. Max ${LIMITS.body} characters.
-3. punchline — the final sentence. Max ${LIMITS.punchline} characters. This line must survive intact.
+1. headline — one sentence. Max ${limits.headline} characters.
+2. body — 1-2 sentences. Max ${limits.body} characters.
+3. punchline — the final sentence. Max ${limits.punchline} characters. This line must survive intact.
 4. imageQuery — a 2-3 word Unsplash search term for a visually striking real photo
 
 Return ONLY valid JSON, no markdown, no backticks:
@@ -126,9 +135,9 @@ export function parseAdResponse(text) {
   return parsed;
 }
 
-export function lengthProblems(ad) {
+export function lengthProblems(ad, limits = DEFAULT_LIMITS) {
   const out = [];
-  for (const [field, max] of Object.entries(LIMITS)) {
+  for (const [field, max] of Object.entries(limits)) {
     const len = [...ad[field]].length;
     if (len > max) out.push({ field, len, max });
   }
@@ -177,7 +186,8 @@ export async function generateAd({
   let ad = parseAdResponse(firstText);
   let retried = false;
 
-  const problems = lengthProblems(ad);
+  const problems = lengthProblems(ad, limitsFor(seed.format.type));
+  const firstProblems = problems;
   if (problems.length) {
     retried = true;
     const detail = problems
@@ -212,5 +222,6 @@ export async function generateAd({
       bIsObject: seed.bIsObject,
     },
     retried,
+    firstProblems,
   };
 }

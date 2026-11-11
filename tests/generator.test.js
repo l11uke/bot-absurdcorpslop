@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   FORMATS, CONCEPTS, buildPrompt, parseAdResponse, drawSeed, randomFigure,
-  lengthProblems, generateAd, LIMITS,
+  lengthProblems, generateAd, LIMITS, limitsFor,
 } from "../generator.js";
 
 const wiki = { title: "Test Article", summary: "A test summary." };
@@ -75,10 +75,41 @@ test("prompt no longer carries the example text Haiku copied", () => {
 });
 
 test("prompt states the length limits", () => {
-  const p = buildPrompt(drawSeed(wiki, lcg(6)));
+  const p = buildPrompt(drawSeed(wiki, lcg(6), { formatType: "Warning" }));
   assert.ok(p.includes(`Max ${LIMITS.body} characters`));
   assert.ok(p.includes(`Max ${LIMITS.punchline} characters`));
   assert.ok(p.includes(`Max ${LIMITS.headline} characters`));
+});
+
+test("Marketplace gets its own limits, structure note and they appear in the prompt", () => {
+  const l = limitsFor("Marketplace");
+  assert.ok(l.body > LIMITS.body && l.punchline < LIMITS.punchline);
+  assert.deepEqual(limitsFor("Warning"), LIMITS);
+  const p = buildPrompt(drawSeed(wiki, lcg(8), { formatType: "Marketplace" }));
+  assert.ok(p.includes(`Max ${l.body} characters`));
+  assert.ok(p.includes("Format structure:"));
+  assert.ok(p.includes("Every exchange adds one new condition"));
+  const w = buildPrompt(drawSeed(wiki, lcg(8), { formatType: "Warning" }));
+  assert.ok(!w.includes("Format structure:"));
+});
+
+test("every format's body + punchline fits Bluesky post 2 (300 incl. newline)", () => {
+  for (const f of FORMATS) {
+    const l = limitsFor(f.type);
+    assert.ok(l.body + 1 + l.punchline <= 300, `${f.type} overflows: ${l.body}+${l.punchline}`);
+  }
+});
+
+test("incident prompts require the premise in the headline or first sentence", () => {
+  const p = buildPrompt(drawSeed(wiki, lcg(9), { formatType: "Yelp", forceSituation: true }));
+  assert.ok(p.includes("must state this incident literally"));
+  const q = buildPrompt(drawSeed(wiki, lcg(9), { formatType: "Warning" }));
+  assert.ok(!q.includes("must state this incident literally"));
+});
+
+test("brand name rule bans place names, titles and personal names from Subject A", () => {
+  const p = buildPrompt(drawSeed(wiki, lcg(10)));
+  assert.ok(p.includes("Never put place names, titles of films, books or songs, or personal names from Subject A in the brand name"));
 });
 
 test("drawSeed is deterministic for a given rng and varies across rngs", () => {
@@ -158,11 +189,29 @@ test("parseAdResponse rejects missing, empty and non-JSON", () => {
   assert.throws(() => parseAdResponse("sorry, here is your ad"));
 });
 
+test("lengthProblems honours custom limits", () => {
+  const ad = { headline: "h", body: "x".repeat(200), punchline: "p" };
+  assert.equal(lengthProblems(ad).length, 1);
+  assert.equal(lengthProblems(ad, limitsFor("Marketplace")).length, 0);
+});
+
 test("lengthProblems flags each over-limit field and nothing else", () => {
   const ok = { headline: "x".repeat(LIMITS.headline), body: "x".repeat(LIMITS.body), punchline: "x".repeat(LIMITS.punchline) };
   assert.deepEqual(lengthProblems(ok), []);
   const bad = { ...ok, body: "x".repeat(LIMITS.body + 1), punchline: "x".repeat(LIMITS.punchline + 5) };
   assert.deepEqual(lengthProblems(bad).map((p) => p.field), ["body", "punchline"]);
+});
+
+test("generateAd reports first-draft problems, and a Marketplace body of 200 needs no retry", async () => {
+  const body = "x".repeat(200);
+  const m = run([goodJson({ body })], { formatType: "Marketplace" });
+  const ad = await m.p;
+  assert.equal(m.f.calls.length, 1);
+  assert.deepEqual(ad.firstProblems, []);
+  const w = run([goodJson({ body }), goodJson()], { formatType: "Warning" });
+  const ad2 = await w.p;
+  assert.equal(ad2.firstProblems[0].field, "body");
+  assert.equal(ad2.retried, true);
 });
 
 test("generateAd happy path makes one API call and returns seed info", async () => {
@@ -184,7 +233,7 @@ test("generateAd honours formatType and forceSituation", async () => {
 
 test("over-limit output triggers exactly one retry with a 3-message conversation", async () => {
   const long = goodJson({ body: "x".repeat(LIMITS.body + 40) });
-  const { f, p } = run([long, goodJson({ body: "short" })]);
+  const { f, p } = run([long, goodJson({ body: "short" })], { formatType: "Warning" });
   const ad = await p;
   assert.equal(f.calls.length, 2);
   assert.equal(f.calls[1].messages.length, 3);
@@ -196,7 +245,7 @@ test("over-limit output triggers exactly one retry with a 3-message conversation
 
 test("a retry that is still too long is accepted without a third call", async () => {
   const long = goodJson({ body: "x".repeat(LIMITS.body + 40) });
-  const { f, p } = run([long, long]);
+  const { f, p } = run([long, long], { formatType: "Warning" });
   const ad = await p;
   assert.equal(f.calls.length, 2);
   assert.equal(ad.retried, true);
@@ -204,7 +253,7 @@ test("a retry that is still too long is accepted without a third call", async ()
 
 test("an unparsable retry keeps the first result", async () => {
   const long = goodJson({ body: "y".repeat(LIMITS.body + 40) });
-  const { p } = run([long, "not json at all"]);
+  const { p } = run([long, "not json at all"], { formatType: "Warning" });
   const ad = await p;
   assert.ok(ad.body.startsWith("yyy"));
 });

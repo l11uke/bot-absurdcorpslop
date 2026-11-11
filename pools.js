@@ -417,6 +417,16 @@ export const MEASURE_UNITS = [
 
 export const OBJECT_SHARE = 0.5;
 
+// Bluesky post 2 holds body + newline + punchline in 300 graphemes, so body + punchline must stay under 300.
+export const DEFAULT_LIMITS = { headline: 140, body: 150, punchline: 100 };
+export const FORMAT_LIMITS = {
+  Marketplace: { body: 215, punchline: 80 }
+};
+
+export const FORMAT_NOTES = {
+  Marketplace: "The body is a thread of at least three Me:/Them: exchanges. Every exchange adds one new condition, demand or detail, so the situation gets worse with each line. The punchline is the last message in the thread."
+};
+
 export const SITUATIONS = {
   Marketplace: {
     chance: 1,

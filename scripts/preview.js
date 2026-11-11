@@ -22,6 +22,7 @@ export function formatAd(ad) {
     `seed: figure=${s.figure} | ${s.situation ? "incident=" + s.situation : "stake=" + s.stake}`,
     `breakdown: ${s.breakdown}`,
     `retried: ${ad.retried} | image: ${ad.imageQuery}`,
+    `first draft: ${ad.firstProblems && ad.firstProblems.length ? ad.firstProblems.map((p) => `${p.field} ${p.len}/${p.max}`).join(", ") : "within limits"}`,
   ].join("\n");
 }
 
