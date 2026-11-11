@@ -2,7 +2,7 @@ import "dotenv/config";
 import fetch from "node-fetch";
 import { execSync } from "child_process";
 
-const FORMATS = [
+export const FORMATS = [
   { type: "Infomercial", hook: "Are you tired of...", voice: "desperate, breathless, assumes the listener is suffering" },
   { type: "Luxury", hook: "For those who understand...", voice: "quiet, assured, slightly contemptuous of people who need to be told. Brief. Never explains itself. One clause per sentence." },
   { type: "Tech Startup", hook: "We rebuilt X from the ground up", voice: "a solution looking for a problem, states the obvious without thinking objectively" },
@@ -24,7 +24,7 @@ const FORMATS = [
   { type: "Yelp", hook: "I don't normally do this but...", voice: "grievance spiral, starts calm then deteriorates" },
 ];
 
-const CONCEPTS = [
+export const CONCEPTS = [
   // Geological / earth science
   "a sedimentary layer",
   "an alluvial fan",
@@ -368,40 +368,62 @@ async function getWikiArticle() {
   };
 }
 
-export async function generateAd() {
-  const wiki = await getWikiArticle();
-  const concept = randomConcept();
-  const format = FORMATS[Math.floor(Math.random() * FORMATS.length)];
-
-  const prompt = `You are a deranged advertising copywriter who has been given two completely unrelated subjects and must produce a fake advertisement that treats their combination as completely normal.
+export function buildPrompt(format, wiki, concept) {
+  return `You are a sincere customer, employee, or business owner writing in the "${format.type}" format. You have been given two unrelated subjects. In your world they are connected, and you have been living inside that connection for some time.
 
 Subject A (from Wikipedia): ${wiki.title} — ${wiki.summary}
 Subject B (a concept): ${concept}
 
-Ad format: ${format.type}
-Tone of voice: ${format.voice}
-Content hook: ${format.hook}
+Format: ${format.type}
+Format voice: ${format.voice}
+Format hook: ${format.hook}
 
 BRAND NAME:
-Invent a fake brand name that is obviously wrong — it should sound like someone fed both subjects into a name generator and hit enter without checking. Not a pun. Not a joke. Just confidently incorrect. Like a company that should not exist.
+Invent a brand name that is obviously wrong. It should sound like both subjects went through a name generator unchecked. Confidently incorrect, no puns.
 
-COPY RULES:
-- You must include at least one specific detail from the Wikipedia subject and work the concept into the copy as if it belongs there
-- The ad must go somewhere unexpected — start in format, then let the combination pull it somewhere it shouldn't go
+THE ARC (applies to every format):
+- headline: opens fully in the format voice and sounds normal for about one clause
+- body: composure slips. A personal situation appears, with a specific number, a duration, or a named relative. The narrator treats it as routine.
+- punchline: total breakdown. The narrator is far past the point of reason, still polite, and ends with a small practical request that shows how bad things have become.
+
+RULES:
+- Include at least one specific detail from Subject A and make Subject B load-bearing in the situation
+- Mundane stakes: money, snacks, spouses, deadlines, parking, refunds
+- Specific numbers beat vague ones. "Day 19", not "for a while".
 - Never acknowledge the subjects are unrelated
-- Write with the unhinged sincerity of someone who sees no problem here whatsoever
-- Never use real names of living or historical people from the Wikipedia subject — refer to them only by role or category
-- Never use real business names from the Wikipedia subject — refer to them by type only
+- Never use real names of living or historical people from Subject A. Refer to them by role or category.
+- Never use real business names from Subject A. Refer to them by type only.
 - Do not use the words: revolutionary, game-changing, innovative, unlock, leverage, seamlessly
 
 OUTPUT:
-1. headline — one punchy sentence in the tone of the format
-2. body — 1-2 sentences in format voice that set up the joke. Max 150 characters.
-3. punchline — the final sentence. The wrongest, most specific thing. Max 100 characters. This line must survive intact.
+1. headline — one sentence
+2. body — 1-2 sentences. Max 150 characters.
+3. punchline — the final sentence. Max 100 characters. This line must survive intact.
 4. imageQuery — a 2-3 word Unsplash search term for a visually striking real photo
 
 Return ONLY valid JSON, no markdown, no backticks:
 {"brandName": "...", "headline": "...", "body": "...", "punchline": "...", "imageQuery": "..."}`;
+}
+
+const REQUIRED_FIELDS = ["brandName", "headline", "body", "punchline", "imageQuery"];
+
+export function parseAdResponse(text) {
+  const clean = text.replace(/^```json\s*|^```\s*|```$/gm, "").trim();
+  const parsed = JSON.parse(clean);
+  const missing = REQUIRED_FIELDS.filter(
+    (k) => typeof parsed[k] !== "string" || !parsed[k].trim()
+  );
+  if (missing.length) {
+    throw new Error(`Model response missing fields: ${missing.join(", ")}`);
+  }
+  return parsed;
+}
+
+export async function generateAd() {
+  const wiki = await getWikiArticle();
+  const concept = randomConcept();
+  const format = FORMATS[Math.floor(Math.random() * FORMATS.length)];
+  const prompt = buildPrompt(format, wiki, concept);
 
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -419,9 +441,7 @@ Return ONLY valid JSON, no markdown, no backticks:
 
   if (!res.ok) throw new Error(`Anthropic API error: ${res.status}`);
   const data = await res.json();
-  const text = data.content[0].text.trim();
-  const clean = text.replace(/^```json\s*|^```\s*|```$/gm, "").trim();
-  const parsed = JSON.parse(clean);
+  const parsed = parseAdResponse(data.content[0].text.trim());
 
   return {
     brandName: parsed.brandName,
