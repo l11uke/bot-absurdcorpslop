@@ -20,7 +20,7 @@ export async function uploadImageToBluesky(image, accessJwt) {
   // Fetch image bytes from Unsplash
   const imgRes = await fetch(image.url);
   if (!imgRes.ok) throw new Error(`Failed to fetch image: ${imgRes.status}`);
-  const buffer = await imgRes.buffer();
+  const buffer = Buffer.from(await imgRes.arrayBuffer());
   const contentType = imgRes.headers.get("content-type") || "image/jpeg";
 
   // Upload blob to Bluesky

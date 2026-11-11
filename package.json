@@ -6,7 +6,8 @@
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js",
-    "post-once": "node -e \"import('./generator.js').then(m=>m.generateAd()).then(ad=>import('./bluesky.js').then(b=>b.postAd(ad)))\""
+    "post-once": "node -e \"import('./generator.js').then(m=>m.generateAd()).then(ad=>import('./bluesky.js').then(b=>b.postAd(ad)))\"",
+    "test": "node --test"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
