@@ -5,7 +5,7 @@ import {
   lengthProblems, generateAd, LIMITS, limitsFor, wordsFor,
   forbiddenBrandWords, brandProblems, MAX_REPAIRS,
   getWikiArticle, parseWikiResponse, WIKI_USER_AGENT,
-  isSensitive, drawSafeWiki, MAX_WIKI_DRAWS, randomTime,
+  isSensitive, drawSafeWiki, MAX_WIKI_DRAWS, randomTime, isBiography, isUnsuitable, BIO_PATTERNS,
 } from "../generator.js";
 
 const wiki = { title: "Test Article", summary: "A test summary." };
@@ -407,7 +407,7 @@ test("drawSafeWiki throws after the maximum number of draws and names what it sk
   let n = 0;
   assert.throws(
     () => drawSafeWiki({ wikiImpl: () => { n++; return { title: "Genocide memorial", summary: "" }; }, pause: () => {} }),
-    /No suitable Wikipedia article after 5 draws \(skipped: Genocide memorial; /
+    new RegExp(`No suitable Wikipedia article after ${MAX_WIKI_DRAWS} draws \\(skipped: Genocide memorial; `)
   );
   assert.equal(n, MAX_WIKI_DRAWS);
 });
@@ -466,4 +466,53 @@ test("the sensitive list keeps its core terms (removals must be deliberate)", ()
   ];
   const probes = core.map((t) => ({ title: `Article about ${t}`, summary: "" }));
   for (const [i, p] of probes.entries()) assert.ok(isSensitive(p), `core term not flagged: ${core[i]}`);
+});
+
+test("isBiography flags person articles by birth and death dates, pronouns and died", () => {
+  const yes = [
+    ["Mariano Haro", "Mariano Haro (born 11 December 1940) is a Spanish former long-distance runner."],
+    ["Some Painter", "Some Painter (1850–1920) was a landscape artist."],
+    ["Some Painter", "Some Painter (1850 – ) is a landscape artist."],
+    ["A Coach", "A Coach was born in a small town and led the team."],
+    ["Sam Lee", "Sam Lee was born to a farming family and led the team."],
+    ["Sam Lee", "Sam Lee, born in a small town, led the team."],
+    ["A Person", "An athlete who died in 2019 after a long career."],
+    ["A Founder", "The company was started by a friend and her brother."],
+    ["A Writer", "Writer (c. 1200 – c. 1260) wrote songs."],
+  ];
+  const no = [
+    ["Spotted scrubwren", "The spotted scrubwren is a species of bird found in Australia."],
+    ["Warehouse", "A warehouse is a building for storing goods."],
+    ["Lucaston, Tasmania", "Lucaston is a locality in the Huon Valley."],
+    ["Dreamland (2016 film)", "Dreamland is a 2016 documentary film."],
+    ["Hertha BSC", "Hertha BSC is a German sports club based in Berlin."],
+  ];
+  for (const [title, summary] of yes) assert.ok(isBiography({ title, summary }), `should flag: ${title} | ${summary}`);
+  for (const [title, summary] of no) assert.ok(!isBiography({ title, summary }), `should pass: ${title}`);
+});
+
+test("isUnsuitable is true for either sensitive or biography articles", () => {
+  assert.ok(isUnsuitable({ title: "Cold War", summary: "A period of tension." }));
+  assert.ok(isUnsuitable({ title: "A Person", summary: "She was a teacher." }));
+  assert.ok(!isUnsuitable({ title: "Spotted scrubwren", summary: "A bird." }));
+});
+
+test("drawSafeWiki skips biographies and reports them", () => {
+  const queue = [
+    { title: "Mariano Haro", summary: "Mariano Haro (born 1940) is a runner." },
+    { title: "Pool noodle", summary: "A foam tube used for swimming." },
+  ];
+  const out = drawSafeWiki({ wikiImpl: () => queue.shift(), pause: () => {} });
+  assert.equal(out.wiki.title, "Pool noodle");
+  assert.deepEqual(out.skipped, ["Mariano Haro"]);
+});
+
+test("the draw limit is 8 so strict filters rarely exhaust it", () => {
+  assert.equal(MAX_WIKI_DRAWS, 8);
+  assert.ok(BIO_PATTERNS.length >= 5);
+});
+
+test("prompt forbids mentioning a death, illness or injury", () => {
+  const p = buildPrompt(drawSeed(wiki, lcg(12)));
+  assert.ok(p.includes("Never mention the death, illness or injury of any real person, or of anyone Subject A describes"));
 });

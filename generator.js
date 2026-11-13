@@ -123,6 +123,7 @@ THE ARC (applies to every format):
 RULES:
 - Include at least one specific detail from Subject A and make Subject B load-bearing in the situation
 - Do not make a spouse or marriage the source of the problem
+- Never mention the death, illness or injury of any real person, or of anyone Subject A describes
 - Never acknowledge the subjects are unrelated
 - Never use real names of living or historical people from Subject A. Refer to them by role or category.
 - Never use real business names from Subject A. Refer to them by type only.
@@ -235,7 +236,25 @@ export function isSensitive(wiki) {
   return SENSITIVE_RE.test(`${wiki.title} ${wiki.summary}`);
 }
 
-export const MAX_WIKI_DRAWS = 5;
+export const BIO_PATTERNS = [
+  /\(\s*(?:born|b\.)\s/i,
+  /\(\s*(?:c\.\s*)?\d{3,4}\s*[–—-]\s*(?:c\.\s*)?\d{0,4}\s*\)/,
+  /\bwas born\b/i,
+  /\bborn (?:on|in)\b/i,
+  /\bdied\b/i,
+  /\b(?:he|she|his|her|him|hers)\b/i,
+];
+
+export function isBiography(wiki) {
+  const text = `${wiki.title} ${wiki.summary}`;
+  return BIO_PATTERNS.some((re) => re.test(text));
+}
+
+export function isUnsuitable(wiki) {
+  return isSensitive(wiki) || isBiography(wiki);
+}
+
+export const MAX_WIKI_DRAWS = 8;
 
 export function drawSafeWiki({
   wikiImpl = getWikiArticle,
@@ -245,7 +264,7 @@ export function drawSafeWiki({
   const skipped = [];
   for (let i = 0; i < maxDraws; i++) {
     const wiki = wikiImpl();
-    if (!isSensitive(wiki)) return { wiki, skipped };
+    if (!isUnsuitable(wiki)) return { wiki, skipped };
     skipped.push(wiki.title);
     if (i < maxDraws - 1) pause();
   }
