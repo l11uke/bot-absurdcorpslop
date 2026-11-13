@@ -5,7 +5,7 @@ import {
   FORMATS, CONCEPTS, OBJECTS, STAKES, BREAKDOWNS,
   COUNT_UNITS, MEASURE_UNITS, OBJECT_SHARE, SITUATIONS,
   DEFAULT_LIMITS, FORMAT_LIMITS, DEFAULT_WORDS, FORMAT_WORDS, FORMAT_NOTES,
-  ENDINGS, ENDING_SHARE,
+  ENDINGS, ENDING_SHARE, SENSITIVE_STEMS, SENSITIVE_WORDS,
 } from "./pools.js";
 
 export { FORMATS, CONCEPTS };
@@ -47,6 +47,15 @@ export function randomFigure(rng = Math.random) {
   return `${whole}.${tenth} ${pick(MEASURE_UNITS, rng)}`;
 }
 
+export function randomTime(rng = Math.random) {
+  const hour = 1 + Math.floor(rng() * 12);
+  let minute;
+  do {
+    minute = 1 + Math.floor(rng() * 59);
+  } while (minute === 47 || minute % 5 === 0);
+  return `${hour}:${String(minute).padStart(2, "0")} ${rng() < 0.5 ? "AM" : "PM"}`;
+}
+
 export function drawSeed(wiki, rng = Math.random, opts = {}) {
   const { formatType, forceSituation = false } = opts;
   const format = formatType
@@ -71,7 +80,7 @@ export function drawSeed(wiki, rng = Math.random, opts = {}) {
     situation,
     stake: situation ? null : pick(STAKES, rng),
     figure: randomFigure(rng),
-    breakdown: pick(BREAKDOWNS, rng),
+    breakdown: pick(BREAKDOWNS, rng).replaceAll("{time}", randomTime(rng)),
     ending: rng() < ENDING_SHARE ? pick(ENDINGS, rng) : null,
   };
 }
@@ -216,6 +225,33 @@ export function parseWikiResponse(raw) {
   };
 }
 
+const escapeRe = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const SENSITIVE_RE = new RegExp(
+  `\\b(?:${SENSITIVE_STEMS.map(escapeRe).join("|")})|\\b(?:${SENSITIVE_WORDS.map(escapeRe).join("|")})\\b`,
+  "i"
+);
+
+export function isSensitive(wiki) {
+  return SENSITIVE_RE.test(`${wiki.title} ${wiki.summary}`);
+}
+
+export const MAX_WIKI_DRAWS = 5;
+
+export function drawSafeWiki({
+  wikiImpl = getWikiArticle,
+  pause = () => sleepSync(1),
+  maxDraws = MAX_WIKI_DRAWS,
+} = {}) {
+  const skipped = [];
+  for (let i = 0; i < maxDraws; i++) {
+    const wiki = wikiImpl();
+    if (!isSensitive(wiki)) return { wiki, skipped };
+    skipped.push(wiki.title);
+    if (i < maxDraws - 1) pause();
+  }
+  throw new Error(`No suitable Wikipedia article after ${maxDraws} draws (skipped: ${skipped.join("; ")})`);
+}
+
 export function getWikiArticle({ curl = runCurl, sleep = sleepSync, retryDelaySeconds = 3 } = {}) {
   try {
     return parseWikiResponse(curl());
@@ -247,11 +283,12 @@ async function askClaude(messages, fetchImpl) {
 export async function generateAd({
   fetchImpl = fetch,
   wikiImpl = getWikiArticle,
+  pause,
   rng = Math.random,
   formatType,
   forceSituation = false,
 } = {}) {
-  const wiki = wikiImpl();
+  const { wiki, skipped } = drawSafeWiki({ wikiImpl, ...(pause ? { pause } : {}) });
   const seed = drawSeed(wiki, rng, { formatType, forceSituation });
   const words = wordsFor(seed.format.type);
   const messages = [{ role: "user", content: buildPrompt(seed) }];
@@ -297,6 +334,8 @@ export async function generateAd({
       ending: seed.ending,
       bIsObject: seed.bIsObject,
     },
+    redrawn: skipped.length,
+    skippedTitles: skipped,
     retried: repairs > 0,
     repairs,
     firstProblems,

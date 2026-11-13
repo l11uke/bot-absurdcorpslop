@@ -30,3 +30,15 @@ test("formatAd says when the first draft was within limits", () => {
   assert.ok(out.includes("first draft: within limits"));
   assert.ok(out.includes("ending: free"));
 });
+
+test("formatAd shows redraws only when they happened", () => {
+  const base = {
+    format: "Yelp", brandName: "B", headline: "H", body: "B", punchline: "P",
+    subjectA: "SA", subjectB: "SB", imageQuery: "iq", retried: false, repairs: 0,
+    firstProblems: [], finalProblems: [],
+    seed: { figure: "1 kg", stake: "s", situation: null, breakdown: "br", ending: null },
+  };
+  assert.ok(!formatAd({ ...base, redrawn: 0, skippedTitles: [] }).includes("redrawn"));
+  const out = formatAd({ ...base, redrawn: 2, skippedTitles: ["X", "Y"] });
+  assert.ok(out.includes("redrawn: 2 (skipped: X; Y)"));
+});

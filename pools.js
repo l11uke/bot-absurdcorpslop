@@ -401,7 +401,7 @@ export const BREAKDOWNS = [
   "the writer reveals they are writing from an unexpected place",
   "the writer starts referring to themselves in the third person",
   "the writer corrects themselves three times in one sentence",
-  "the writer gives a very precise time and then a very vague explanation",
+  "the writer gives the exact time {time} and then a very vague explanation",
   "the writer introduces a rule that only they follow",
   "the writer thanks someone for something that has not been explained"
 ];
@@ -474,3 +474,18 @@ export const SITUATIONS = {
     ]
   }
 };
+
+// Wikipedia articles whose title or summary matches are skipped and redrawn.
+// Stems match the start of a word (murder matches murdered). Words match whole words only.
+export const SENSITIVE_STEMS = [
+  "murder", "massacre", "genocid", "holocaust", "nazi", "terror", "bomb", "hostage", "kidnap",
+  "assassinat", "execut", "torture", "lynch", "slaver", "famine", "epidemic", "pandemic", "tsunami",
+  "earthquake", "disaster", "casualt", "fatalit", "victim", "shooting", "shootout", "massacr",
+  "suicid", "abuse", "abusive", "rape", "assault", "trafficking", "war crime", "concentration camp",
+  "plane crash", "air crash", "shipwreck", "sinking of", "killed", "killing", "mass grave", "ethnic cleansing",
+  "christian", "catholic", "protestant", "islam", "muslim", "jewish", "judaism", "hindu", "buddhis",
+  "sikh", "church", "mosque", "synagogue", "cathedral", "monastery", "apostle", "biblical", "bible",
+  "quran", "torah", "pastor", "diocese", "papal", "vatican", "jihad", "crusade", "religio", "theolog", "jesus"
+];
+
+export const SENSITIVE_WORDS = ["war", "wars", "pope", "rape", "raped", "cleric", "clerics", "massacred"];

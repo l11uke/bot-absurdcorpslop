@@ -5,6 +5,7 @@ import {
   lengthProblems, generateAd, LIMITS, limitsFor, wordsFor,
   forbiddenBrandWords, brandProblems, MAX_REPAIRS,
   getWikiArticle, parseWikiResponse, WIKI_USER_AGENT,
+  isSensitive, drawSafeWiki, MAX_WIKI_DRAWS, randomTime,
 } from "../generator.js";
 
 const wiki = { title: "Test Article", summary: "A test summary." };
@@ -365,4 +366,104 @@ test("the Wikipedia call identifies the bot with a User-Agent", async () => {
   const src = readFileSync(new URL("../generator.js", import.meta.url), "utf8");
   assert.ok(src.includes('-A "${WIKI_USER_AGENT}"'));
   assert.match(WIKI_USER_AGENT, /^bot-absurdcorpslop\/\d/);
+});
+
+test("isSensitive flags tragedy and religion articles and passes ordinary ones", () => {
+  const yes = [
+    ["2008 Mumbai terror attack", ""],
+    ["Paul the Apostle and Jewish Christianity", ""],
+    ["St Mary's Church", "A parish church in a village."],
+    ["Cold War", ""],
+    ["Some Town", "The town was the site of a massacre in 1890."],
+    ["Pope Example", ""],
+  ];
+  const no = [
+    ["Spotted scrubwren", "A small bird."],
+    ["Warehouse", "A building for goods."],
+    ["Warwick", "A town."],
+    ["Skill", "An ability."],
+    ["Oncocephalus", "A genus of assassin bugs."],
+  ];
+  for (const [title, summary] of yes) assert.ok(isSensitive({ title, summary }), `should flag: ${title}`);
+  for (const [title, summary] of no) {
+    assert.ok(!isSensitive({ title, summary }), `should pass: ${title}`);
+  }
+});
+
+test("drawSafeWiki redraws past sensitive articles with a pause between", () => {
+  const queue = [
+    { title: "Mass grave", summary: "" },
+    { title: "Some Church", summary: "" },
+    { title: "Spotted scrubwren", summary: "A bird." },
+  ];
+  let pauses = 0;
+  const out = drawSafeWiki({ wikiImpl: () => queue.shift(), pause: () => pauses++ });
+  assert.equal(out.wiki.title, "Spotted scrubwren");
+  assert.deepEqual(out.skipped, ["Mass grave", "Some Church"]);
+  assert.equal(pauses, 2);
+});
+
+test("drawSafeWiki throws after the maximum number of draws and names what it skipped", () => {
+  let n = 0;
+  assert.throws(
+    () => drawSafeWiki({ wikiImpl: () => { n++; return { title: "Genocide memorial", summary: "" }; }, pause: () => {} }),
+    /No suitable Wikipedia article after 5 draws \(skipped: Genocide memorial; /
+  );
+  assert.equal(n, MAX_WIKI_DRAWS);
+});
+
+test("generateAd skips sensitive articles and reports it", async () => {
+  const queue = [{ title: "Famine relief", summary: "" }, { title: "Test Article", summary: "A test summary." }];
+  const f = stubFetch([goodJson()]);
+  const ad = await generateAd({ fetchImpl: f.impl, wikiImpl: () => queue.shift(), pause: () => {}, rng: lcg(7) });
+  assert.equal(ad.subjectA, "Test Article");
+  assert.equal(ad.redrawn, 1);
+  assert.deepEqual(ad.skippedTitles, ["Famine relief"]);
+  assert.equal(f.calls.length, 1);
+});
+
+test("randomTime never gives :47 or a round-five minute and always has AM or PM", () => {
+  for (let i = 1; i <= 3000; i++) {
+    const t = randomTime(lcg(i * 11));
+    const m = t.match(/^(\d{1,2}):(\d{2}) (AM|PM)$/);
+    assert.ok(m, `bad time ${t}`);
+    const minute = parseInt(m[2], 10);
+    assert.ok(minute !== 47 && minute % 5 !== 0 && minute >= 1 && minute <= 59, `bad minute in ${t}`);
+    assert.ok(parseInt(m[1], 10) >= 1 && parseInt(m[1], 10) <= 12);
+  }
+});
+
+test("the precise-time breakdown is filled with a drawn time and never leaves a placeholder", () => {
+  let seen = 0;
+  for (let i = 1; i <= 600; i++) {
+    const s = drawSeed(wiki, lcg(i * 17));
+    assert.ok(!s.breakdown.includes("{time}"), "placeholder left");
+    if (/exact time \d{1,2}:\d{2} (AM|PM)/.test(s.breakdown)) {
+      seen++;
+      assert.ok(!s.breakdown.includes(":47"));
+    }
+  }
+  assert.ok(seen > 0, "time breakdown never drawn");
+});
+
+test("every sensitive stem and word triggers on its own, including inflected forms", async () => {
+  const { SENSITIVE_STEMS, SENSITIVE_WORDS } = await import("../pools.js");
+  for (const t of SENSITIVE_STEMS) {
+    assert.ok(isSensitive({ title: `A ${t}`, summary: "" }), `stem not matched: ${t}`);
+    assert.ok(isSensitive({ title: "X", summary: `Notes on ${t}ing and more.` }), `stem prefix not matched: ${t}`);
+  }
+  for (const t of SENSITIVE_WORDS) {
+    assert.ok(isSensitive({ title: `A ${t} here`, summary: "" }), `word not matched: ${t}`);
+    assert.ok(!isSensitive({ title: `Aa${t}zz`, summary: "" }), `word matched inside another word: ${t}`);
+  }
+});
+
+test("the sensitive list keeps its core terms (removals must be deliberate)", () => {
+  const core = [
+    "murder", "massacre", "genocid", "holocaust", "terror", "hostage", "suicid", "abuse", "rape",
+    "disaster", "victim", "shooting", "torture", "christian", "catholic", "islam", "muslim", "jewish",
+    "hindu", "church", "mosque", "bible", "quran", "jesus",
+  ];
+  const probes = core.map((t) => ({ title: `Article about ${t}`, summary: "" }));
+  for (const [i, p] of probes.entries()) assert.ok(isSensitive(p), `core term not flagged: ${core[i]}`);
 });

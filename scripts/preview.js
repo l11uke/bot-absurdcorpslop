@@ -24,13 +24,14 @@ export function formatAd(ad) {
     ad.punchline,
     "",
     `A: ${ad.subjectA} | B: ${ad.subjectB}`,
+    ad.redrawn ? `redrawn: ${ad.redrawn} (skipped: ${ad.skippedTitles.join("; ")})` : null,
     `seed: figure=${s.figure} | ${s.situation ? "incident=" + s.situation : "stake=" + s.stake}`,
     `breakdown: ${s.breakdown}`,
     `ending: ${s.ending || "free"}`,
     `retried: ${ad.retried} (repairs: ${ad.repairs ?? 0}) | image: ${ad.imageQuery}`,
     `first draft: ${describe(ad.firstProblems)}`,
     `final: ${describe(ad.finalProblems)}`,
-  ].join("\n");
+  ].filter((l) => l !== null).join("\n");
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

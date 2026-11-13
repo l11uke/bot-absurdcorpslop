@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   FORMATS, CONCEPTS, OBJECTS, STAKES, BREAKDOWNS, COUNT_UNITS, MEASURE_UNITS,
-  SITUATIONS, OBJECT_SHARE, ENDINGS, ENDING_SHARE, DEFAULT_WORDS, FORMAT_WORDS, FORMAT_NOTES,
+  SITUATIONS, OBJECT_SHARE, ENDINGS, ENDING_SHARE, DEFAULT_WORDS, FORMAT_WORDS, FORMAT_NOTES, SENSITIVE_STEMS, SENSITIVE_WORDS,
 } from "../pools.js";
 
 const unique = (list) => new Set(list).size === list.length;
@@ -63,4 +63,14 @@ test("word budgets exist for every default field and Marketplace thread fits", (
   for (const k of ["headline", "body", "punchline"]) assert.ok(DEFAULT_WORDS[k] > 0);
   assert.ok(FORMAT_WORDS.Marketplace.body >= 27);
   assert.ok(FORMAT_NOTES.Marketplace.includes("three messages"));
+});
+
+test("sensitive lists are lowercase, unique and non-trivial", () => {
+  assert.ok(SENSITIVE_STEMS.length >= 40 && SENSITIVE_WORDS.length >= 3);
+  assert.ok(unique(SENSITIVE_STEMS) && unique(SENSITIVE_WORDS));
+  for (const t of [...SENSITIVE_STEMS, ...SENSITIVE_WORDS]) assert.equal(t, t.toLowerCase());
+});
+
+test("exactly one breakdown carries the {time} placeholder", () => {
+  assert.equal(BREAKDOWNS.filter((b) => b.includes("{time}")).length, 1);
 });
