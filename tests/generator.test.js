@@ -462,7 +462,7 @@ test("the sensitive list keeps its core terms (removals must be deliberate)", ()
   const core = [
     "murder", "massacre", "genocid", "holocaust", "terror", "hostage", "suicid", "abuse", "rape",
     "disaster", "victim", "shooting", "torture", "christian", "catholic", "islam", "muslim", "jewish",
-    "hindu", "church", "mosque", "bible", "quran", "jesus",
+    "hindu", "church", "mosque", "bible", "quran", "jesus", "temple", "shrine", "buddha", "shinto",
   ];
   const probes = core.map((t) => ({ title: `Article about ${t}`, summary: "" }));
   for (const [i, p] of probes.entries()) assert.ok(isSensitive(p), `core term not flagged: ${core[i]}`);

@@ -69,7 +69,35 @@ test("every format limit pair fits post 2 once text is built", async () => {
 
 test("bluesky.js uses buildPostTexts and no inline truncate", () => {
   const src = readFileSync(new URL("../bluesky.js", import.meta.url), "utf8");
-  assert.ok(src.includes('import { buildPostTexts } from "./text.js"'));
+  assert.match(src, /import \{[^}]*buildPostTexts[^}]*\} from "\.\/text\.js"/);
   assert.ok(src.includes("buildPostTexts(ad)"));
   assert.ok(!src.includes("const truncate"));
+});
+
+import { parseAtUri } from "../text.js";
+
+test("parseAtUri splits did, collection and rkey from a post URI", () => {
+  assert.deepEqual(
+    parseAtUri("at://did:plc:abc123xyz/app.bsky.feed.post/3mzzblesdhu2f"),
+    { did: "did:plc:abc123xyz", collection: "app.bsky.feed.post", rkey: "3mzzblesdhu2f" }
+  );
+});
+
+test("parseAtUri rejects malformed URIs", () => {
+  for (const bad of ["", "https://example.com/a/b/c", "at://did:plc:abc/app.bsky.feed.post", "at://did:plc:abc/app.bsky.feed.post/a/b", undefined]) {
+    assert.throws(() => parseAtUri(bad), /Malformed AT URI/, `accepted: ${bad}`);
+  }
+});
+
+test("the old destructuring bug is gone and deletePost sends the parsed fields", () => {
+  const src = readFileSync(new URL("../bluesky.js", import.meta.url), "utf8");
+  assert.ok(!src.includes('uri.split("/")'), "positional split is back");
+  assert.ok(src.includes("parseAtUri(uri)"));
+  assert.ok(/repo: did,\s*collection,\s*rkey,/.test(src));
+});
+
+test("deletePost accepts a shared session so batch deletes do not log in each time", () => {
+  const src = readFileSync(new URL("../bluesky.js", import.meta.url), "utf8");
+  assert.ok(src.includes("deletePost(uri, existingSession = null)"));
+  assert.ok(src.includes("export async function createSession"));
 });

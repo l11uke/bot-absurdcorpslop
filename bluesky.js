@@ -1,10 +1,10 @@
 import fetch from "node-fetch";
 import { fetchUnsplashImage, uploadImageToBluesky } from "./images.js";
-import { buildPostTexts } from "./text.js";
+import { buildPostTexts, parseAtUri } from "./text.js";
 
 const BSKY_API = "https://bsky.social/xrpc";
 
-async function createSession() {
+export async function createSession() {
   const res = await fetch(`${BSKY_API}/com.atproto.server.createSession`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -65,9 +65,26 @@ function buildPostRef(post) {
   return { uri: post.uri, cid: post.cid };
 }
 
-export async function deletePost(uri) {
-  const session = await createSession();
-  const [, , , did, , rkey] = uri.split("/");
+export async function listOwnPosts(session) {
+  const records = [];
+  let cursor = "";
+  do {
+    const qs = new URLSearchParams({ repo: session.did, collection: "app.bsky.feed.post", limit: "100" });
+    if (cursor) qs.set("cursor", cursor);
+    const res = await fetch(`${BSKY_API}/com.atproto.repo.listRecords?${qs}`, {
+      headers: { Authorization: `Bearer ${session.accessJwt}` },
+    });
+    if (!res.ok) throw new Error(`List failed: ${res.status} ${await res.text()}`);
+    const page = await res.json();
+    records.push(...page.records);
+    cursor = page.cursor || "";
+  } while (cursor);
+  return records;
+}
+
+export async function deletePost(uri, existingSession = null) {
+  const session = existingSession || (await createSession());
+  const { did, collection, rkey } = parseAtUri(uri);
   const res = await fetch(`${BSKY_API}/com.atproto.repo.deleteRecord`, {
     method: "POST",
     headers: {
@@ -76,7 +93,7 @@ export async function deletePost(uri) {
     },
     body: JSON.stringify({
       repo: did,
-      collection: "app.bsky.feed.post",
+      collection,
       rkey,
     }),
   });

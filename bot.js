@@ -1,7 +1,8 @@
 import "dotenv/config";
 import { generateAd } from "./generator.js";
-import { postAd, deletePost } from "./bluesky.js";
+import { postAd, deletePost, createSession } from "./bluesky.js";
 import { addPost, getExpiredPosts, removePosts } from "./store.js";
+import { cleanupExpired } from "./cleanup.js";
 
 const REQUIRED_ENV = ["ANTHROPIC_API_KEY", "BSKY_HANDLE", "BSKY_APP_PASSWORD"];
 const missing = REQUIRED_ENV.filter((k) => !process.env[k]);
@@ -15,17 +16,16 @@ const INTERVAL_MS = INTERVAL_HOURS * 60 * 60 * 1000;
 const MAX_AGE_DAYS = parseInt(process.env.POST_MAX_AGE_DAYS || "7");
 
 async function cleanup() {
-  const expired = getExpiredPosts(MAX_AGE_DAYS);
-  if (!expired.length) return;
-  console.log(`[${new Date().toISOString()}] Deleting ${expired.length} expired post(s)...`);
-  for (const post of expired) {
-    try {
-      await deletePost(post.uri);
-    } catch (err) {
-      console.error(`Failed to delete ${post.uri}:`, err.message);
-    }
+  let session = null;
+  const { deleted, failed } = await cleanupExpired({
+    getExpired: getExpiredPosts,
+    remove: removePosts,
+    del: async (uri) => deletePost(uri, (session ??= await createSession())),
+    maxAgeDays: MAX_AGE_DAYS,
+  });
+  if (deleted.length || failed.length) {
+    console.log(`[${new Date().toISOString()}] Expired posts: ${deleted.length} deleted, ${failed.length} failed.`);
   }
-  removePosts(expired.map(p => p.uri));
 }
 
 async function run() {

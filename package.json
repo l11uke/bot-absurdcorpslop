@@ -8,7 +8,8 @@
     "start": "node bot.js",
     "post-once": "node -e \"import('./generator.js').then(m=>m.generateAd()).then(ad=>import('./bluesky.js').then(b=>b.postAd(ad)))\"",
     "test": "node --test",
-    "preview": "node scripts/preview.js"
+    "preview": "node scripts/preview.js",
+    "purge": "node scripts/purge.js"
   },
   "dependencies": {
     "dotenv": "^16.4.5",

@@ -27,3 +27,10 @@ export function buildPostTexts(ad) {
     post2: `${body}${punchline}`,
   };
 }
+
+// at://did:plc:xxxx/app.bsky.feed.post/rkey -> { did, collection, rkey }
+export function parseAtUri(uri) {
+  const m = /^at:\/\/([^/]+)\/([^/]+)\/([^/]+)$/.exec(String(uri));
+  if (!m) throw new Error(`Malformed AT URI: ${uri}`);
+  return { did: m[1], collection: m[2], rkey: m[3] };
+}

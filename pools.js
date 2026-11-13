@@ -485,7 +485,8 @@ export const SENSITIVE_STEMS = [
   "plane crash", "air crash", "shipwreck", "sinking of", "killed", "killing", "mass grave", "ethnic cleansing",
   "christian", "catholic", "protestant", "islam", "muslim", "jewish", "judaism", "hindu", "buddhis",
   "sikh", "church", "mosque", "synagogue", "cathedral", "monastery", "apostle", "biblical", "bible",
-  "quran", "torah", "pastor", "diocese", "papal", "vatican", "jihad", "crusade", "religio", "theolog", "jesus"
+  "quran", "torah", "pastor", "diocese", "papal", "vatican", "jihad", "crusade", "religio", "theolog", "jesus",
+  "temple", "shrine", "buddha", "shinto", "taois", "abbey", "convent", "priest", "worship", "deity", "pilgrim"
 ];
 
 export const SENSITIVE_WORDS = ["war", "wars", "pope", "rape", "raped", "cleric", "clerics", "massacred"];
