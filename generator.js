@@ -188,16 +188,45 @@ export function describeProblem(p, words) {
   return `${p.field} is ${p.len} characters (max ${p.max}, about ${words[p.field]} words)`;
 }
 
-export function getWikiArticle() {
-  const result = execSync(
-    'curl -sL --max-time 10 "https://en.wikipedia.org/api/rest_v1/page/random/summary"',
+export const WIKI_USER_AGENT = "bot-absurdcorpslop/1.0 (https://github.com/l11uke/bot-absurdcorpslop)";
+const WIKI_URL = "https://en.wikipedia.org/api/rest_v1/page/random/summary";
+
+function runCurl() {
+  return execSync(
+    `curl -sL --max-time 10 -A "${WIKI_USER_AGENT}" "${WIKI_URL}"`,
     { encoding: "utf8" }
   );
-  const data = JSON.parse(result);
+}
+
+function sleepSync(seconds) {
+  execSync(`sleep ${seconds}`);
+}
+
+export function parseWikiResponse(raw) {
+  let data;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    throw new Error(`Wikipedia returned a non-JSON response: ${String(raw).trim().slice(0, 80)}`);
+  }
+  if (!data || !data.title) throw new Error("Wikipedia response had no title");
   return {
     title: data.title,
     summary: data.extract ? data.extract.slice(0, 300) : "",
   };
+}
+
+export function getWikiArticle({ curl = runCurl, sleep = sleepSync, retryDelaySeconds = 3 } = {}) {
+  try {
+    return parseWikiResponse(curl());
+  } catch (firstErr) {
+    sleep(retryDelaySeconds);
+    try {
+      return parseWikiResponse(curl());
+    } catch (secondErr) {
+      throw new Error(`Wikipedia fetch failed twice: ${secondErr.message}`);
+    }
+  }
 }
 
 async function askClaude(messages, fetchImpl) {

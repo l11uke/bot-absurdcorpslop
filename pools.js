@@ -418,13 +418,13 @@ export const MEASURE_UNITS = [
 export const OBJECT_SHARE = 0.5;
 
 // Bluesky post 2 holds body + newline + punchline in 300 graphemes, so body + punchline must stay under 300.
-export const DEFAULT_LIMITS = { headline: 140, body: 150, punchline: 100 };
+export const DEFAULT_LIMITS = { headline: 140, body: 195, punchline: 100 };
 export const FORMAT_LIMITS = {
   Marketplace: { body: 215, punchline: 80 }
 };
 
 // Haiku follows word budgets far better than character limits. Words go in the prompt, characters validate.
-export const DEFAULT_WORDS = { headline: 20, body: 25, punchline: 14 };
+export const DEFAULT_WORDS = { headline: 20, body: 30, punchline: 14 };
 export const FORMAT_WORDS = {
   Marketplace: { body: 30, punchline: 12 }
 };

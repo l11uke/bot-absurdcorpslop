@@ -4,6 +4,7 @@ import {
   FORMATS, CONCEPTS, buildPrompt, parseAdResponse, drawSeed, randomFigure,
   lengthProblems, generateAd, LIMITS, limitsFor, wordsFor,
   forbiddenBrandWords, brandProblems, MAX_REPAIRS,
+  getWikiArticle, parseWikiResponse, WIKI_USER_AGENT,
 } from "../generator.js";
 
 const wiki = { title: "Test Article", summary: "A test summary." };
@@ -271,7 +272,7 @@ test("over-limit output triggers exactly one retry with a 3-message conversation
   assert.equal(f.calls.length, 2);
   assert.equal(f.calls[1].messages.length, 3);
   assert.equal(f.calls[1].messages[1].role, "assistant");
-  assert.match(f.calls[1].messages[2].content, /body is \d+ characters \(max 150, about 25 words\)/);
+  assert.match(f.calls[1].messages[2].content, new RegExp(`body is \\d+ characters \\(max ${LIMITS.body}, about ${wordsFor("Warning").body} words\\)`));
   assert.equal(ad.body, "short");
   assert.equal(ad.retried, true);
 });
@@ -323,4 +324,45 @@ test("an unparsable retry keeps the first result", async () => {
 test("API errors throw", async () => {
   const { p } = run([500]);
   await assert.rejects(p, /Anthropic API error: 500/);
+});
+
+test("default body limit is 195 and default body word budget is 30", () => {
+  assert.equal(LIMITS.body, 195);
+  assert.equal(wordsFor("Warning").body, 30);
+});
+
+test("parseWikiResponse reads title and trims the summary to 300", () => {
+  const out = parseWikiResponse(JSON.stringify({ title: "T", extract: "x".repeat(500) }));
+  assert.equal(out.title, "T");
+  assert.equal(out.summary.length, 300);
+  assert.equal(parseWikiResponse(JSON.stringify({ title: "T" })).summary, "");
+});
+
+test("parseWikiResponse gives a readable error for rate-limit text and missing titles", () => {
+  assert.throws(() => parseWikiResponse("You are making too many requests to the API."), /non-JSON response: You are making too many/);
+  assert.throws(() => parseWikiResponse("{}"), /no title/);
+});
+
+test("getWikiArticle retries once after a pause and then succeeds", () => {
+  const replies = ["You are making too many requests", JSON.stringify({ title: "Ok", extract: "s" })];
+  const sleeps = [];
+  const out = getWikiArticle({ curl: () => replies.shift(), sleep: (s) => sleeps.push(s) });
+  assert.equal(out.title, "Ok");
+  assert.deepEqual(sleeps, [3]);
+});
+
+test("getWikiArticle throws a readable error after two failures", () => {
+  let n = 0;
+  assert.throws(
+    () => getWikiArticle({ curl: () => { n++; return "nope"; }, sleep: () => {} }),
+    /Wikipedia fetch failed twice: Wikipedia returned a non-JSON response/
+  );
+  assert.equal(n, 2);
+});
+
+test("the Wikipedia call identifies the bot with a User-Agent", async () => {
+  const { readFileSync } = await import("node:fs");
+  const src = readFileSync(new URL("../generator.js", import.meta.url), "utf8");
+  assert.ok(src.includes('-A "${WIKI_USER_AGENT}"'));
+  assert.match(WIKI_USER_AGENT, /^bot-absurdcorpslop\/\d/);
 });

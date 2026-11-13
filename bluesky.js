@@ -1,5 +1,6 @@
 import fetch from "node-fetch";
 import { fetchUnsplashImage, uploadImageToBluesky } from "./images.js";
+import { buildPostTexts } from "./text.js";
 
 const BSKY_API = "https://bsky.social/xrpc";
 
@@ -92,22 +93,10 @@ export async function postAd(ad) {
   const image = await fetchUnsplashImage(ad.imageQuery);
   const blobRef = image ? await uploadImageToBluesky(image, session.accessJwt) : null;
 
-  const truncate = (str, max) => str.length > max ? str.slice(0, max - 1) + "…" : str;
-
-  const credits = `#satire #absurdcorpslop`;
-  const header = `[${ad.format.toUpperCase()}]\n${ad.brandName}\n`;
-  const footer = `\n${credits}`;
-  const headlineMax = 300 - header.length - footer.length;
-  const headline = truncate(ad.headline, headlineMax);
-  const post1Text = `${header}${headline}${footer}`;
+  const { post1: post1Text, post2: post2Text } = buildPostTexts(ad);
 
   const post1 = await createPost(session, post1Text, null, blobRef);
   const post1Ref = buildPostRef(post1);
-
-  const punchline = `\n${ad.punchline}`;
-  const bodyMax = 300 - punchline.length;
-  const body = truncate(ad.body, bodyMax);
-  const post2Text = `${body}${punchline}`;
 
   const replyRef = {
     root: post1Ref,
